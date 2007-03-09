@@ -1,5 +1,6 @@
 /**
  * Author: Charl van Niekerk <charlvn@charlvn.za.net>
+ * Contributor: Simon Pieters <zcorpan@gmail.com>
  */
 
 function annotateLoad(data) {
@@ -15,6 +16,17 @@ function annotateLoad(data) {
 				span.setAttribute("title", status);
 				span.appendChild(document.createTextNode("[" + status + "]"));
 				e.insertBefore(span, spans[0].nextSibling);
+			}
+			var div = document.createElement("div");
+			div.className = status;
+			e.parentNode.insertBefore(div, e);
+			var level = e.tagName.split("H")[1];
+			var current = div.nextSibling
+			div.appendChild(current);
+			while (current = div.nextSibling) {
+				if (/^H(\d)$/.test(current.tagName) && RegExp.$1 <= level)
+					break;
+				div.appendChild(current);
 			}
 		}
 	}
