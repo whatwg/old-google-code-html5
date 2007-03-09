@@ -24,7 +24,10 @@ function annotateLoad(data) {
 			var current = div.nextSibling
 			div.appendChild(current);
 			while (current = div.nextSibling) {
-				if (/^H(\d)$/.test(current.tagName) && RegExp.$1 <= level)
+				var tag = current.tagName;
+				if (tag == "DIV" && /^H\d$/.test(current.firstChild.tagName))
+					tag = current.firstChild.tagName;
+				if (/^H(\d)$/.test(tag) && RegExp.$1 <= level)
 					break;
 				div.appendChild(current);
 			}
