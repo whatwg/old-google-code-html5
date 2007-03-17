@@ -43,5 +43,16 @@ function annotateHandle() {
 
 var req = new XMLHttpRequest();
 req.onreadystatechange = annotateHandle;
-req.open("GET", "annotate-data.xml", true);
+req.open("GET", "annotate-data.xml", true); // xhr is relative to the document, not where the script was found
 req.send(null);
+
+var style = document.createElement("style");
+style.type = "text/css"; // required in html4...
+var styleText = document.createTextNode("\
+ .TBW, .WIP, .SCS { margin-left:-2em; border-left:.2em solid; padding-left:1.8em; }\
+ .TBW { border-color:red; }\
+ .WIP { border-color:orange; }\
+ .SCS { border-color:green; }\
+ ");
+style.appendChild(styleText);
+document.getElementsByTagName("head")[0].appendChild(style);
