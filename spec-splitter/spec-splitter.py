@@ -1,37 +1,21 @@
 import xml.dom.minidom
+import sys
 
-# The XML parser is much faster than the html5lib parser, so this
-# intermediate XHTML file is helpful
-doc = xml.dom.minidom.parse(open('current-work.xhtml'))
-
-# Convert from XHTML5 back to HTML5
-doc.documentElement.removeAttribute('xmlns')
-doc.documentElement.setAttribute('lang', doc.documentElement.getAttribute('xml:lang'))
-doc.documentElement.removeAttribute('xml:lang')
-head = doc.documentElement.getElementsByTagName('head')[0]
-head.insertBefore(doc.createElement('meta'), head.firstChild).setAttribute('charset', 'UTF-8')
-
-# Change the stylesheet, icon and image references to be non-relative
-def make_absolute(uri):
-	if uri[0] == '/':
-		return 'http://www.whatwg.org' + uri
-	else:
-		return 'http://www.whatwg.org/specs/web-apps/current-work/' + uri
-for e in doc.getElementsByTagName('link'):
-	e.setAttribute('href', make_absolute(e.getAttribute('href')))
-for img in doc.getElementsByTagName('img'):
-	img.setAttribute('src', make_absolute(img.getAttribute('src')))
-
-# Create an empty body, for the page content to be added into later
-default_body = doc.createElement('body')
-default_body.setAttribute('class', 'draft')
+# parse document as HTML5
+parser = html5lib.html5parser.HTMLParser(tree=html5lib.treebuilders.dom.TreeBuilder)
+doc = parser.parse(open(sys.argv[1]), encoding='utf-8')
 
 # Extract the body from the source document
 original_body = doc.getElementsByTagName('body')[0]
+
+# Create an empty body, for the page content to be added into later
+default_body = doc.createElement('body')
+default_body.setAttribute('class', original_body.getAttribute('class'))
 original_body.parentNode.replaceChild(default_body, original_body)
 
 # Extract the header, so we can reuse it in every page
 head = original_body.getElementsByTagName('div')[0]
+
 # Make a stripped-down version of it
 short_head = head.cloneNode(True)
 short_head.childNodes = short_head.childNodes[:6]
@@ -42,35 +26,38 @@ script.parentNode.removeChild(script)
 
 # Stuff for fixing up references:
 
-id_pages = {}
 # Finds all the ids and remembers which page they were on
+id_pages = {}
 def extract_ids(page, node):
-	if node.nodeType == node.ELEMENT_NODE and node.hasAttribute('id'):
-		id_pages[node.getAttribute('id')] = page
-	for n in node.childNodes:
-		extract_ids(page, n)
+        if node.nodeType == node.ELEMENT_NODE and node.hasAttribute('id'):
+                id_pages[node.getAttribute('id')] = page
+        for n in node.childNodes:
+                extract_ids(page, n)
+
 # Updates all the href="#id" to point to page#id
 def fix_refs(page, node):
-	if node.nodeType == node.ELEMENT_NODE and node.hasAttribute('href') and node.getAttribute('href')[0] == '#':
+        if node.nodeType == node.ELEMENT_NODE and node.hasAttribute('href') and node.getAttribute('href')[0] == '#':
 		id = node.getAttribute('href')[1:]
 		if id in id_pages:
 			if id_pages[id] != page: # only do non-local links
 				node.setAttribute('href', '%s.html#%s' % (id_pages[id], id))
-		else:
+                else:
 			print "warning: can't find target for #%s" % id
-	for n in node.childNodes:
+        for n in node.childNodes:
 		fix_refs(page, n)
 
 pages = [] # for saving all the output, so fix_refs can be called in a second pass
+
 
 # Contents/intro page:
 
 page = doc.cloneNode(True)
 page_body = page.getElementsByTagName('body')[0]
+
 # Keep moving stuff from the front of the source document into this
 # page, until we find the first heading that isn't class="no-toc"
 while not (original_body.firstChild.nodeName == 'h2'
-		and 'no-toc' not in original_body.firstChild.getAttribute('class').split(' ')):
+           and 'no-toc' not in original_body.firstChild.getAttribute('class').split(' ')):
 	extract_ids('index', original_body.firstChild)
 	page_body.appendChild(original_body.firstChild)
 page_body.appendChild(script.cloneNode(True))
