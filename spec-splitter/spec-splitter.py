@@ -213,7 +213,10 @@ def html5Serializer(element):
 	serializeElement(element)
 	return '<!DOCTYPE HTML>\n' + ''.join(rv)
 
+print "Outputting...";
 
 # Output all the pages
 for name, doc, title in pages:
 	open('%s/%s.html' % (sys.argv[2], name), 'w').write(html5Serializer(doc).encode('utf-8'))
+
+print "Done.";
