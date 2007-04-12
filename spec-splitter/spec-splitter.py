@@ -1,9 +1,15 @@
-import xml.dom.minidom
 import sys
+import html5lib
+
+print "HTML5 Spec Splitter";
+
+print "Parsing...";
 
 # parse document as HTML5
 parser = html5lib.html5parser.HTMLParser(tree=html5lib.treebuilders.dom.TreeBuilder)
 doc = parser.parse(open(sys.argv[1]), encoding='utf-8')
+
+print "Splitting...";
 
 # Extract the body from the source document
 original_body = doc.getElementsByTagName('body')[0]
@@ -12,6 +18,7 @@ original_body = doc.getElementsByTagName('body')[0]
 default_body = doc.createElement('body')
 default_body.setAttribute('class', original_body.getAttribute('class'))
 original_body.parentNode.replaceChild(default_body, original_body)
+doc.removeChild(doc.firstChild) # remove the doctype, else doc.cloneNode dies
 
 # Extract the header, so we can reuse it in every page
 head = original_body.getElementsByTagName('div')[0]
@@ -209,5 +216,4 @@ def html5Serializer(element):
 
 # Output all the pages
 for name, doc, title in pages:
-	open('extract/%s.html' % name, 'w').write(html5Serializer(doc).encode('utf-8'))
-
+	open('%s/%s.html' % sys.argv[2], name, 'w').write(html5Serializer(doc).encode('utf-8'))
