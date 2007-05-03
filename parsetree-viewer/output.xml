@@ -1,0 +1,40 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      lang="en">
+    <head>
+        <title>html5lib Parse Tree</title>
+        <style>
+            code.element-name {color: purple; font-weight: bold;}
+            code.attribute-name { color: black; font-weight: bold; }
+            code.attribute-value { color: blue; font-weight: normal; }
+            code.doctype { color: teal; }
+            code.text_marker { color: gray; }
+            code.comment_marker { color:green; }
+        </style>
+    </head>
+    <body>
+        <h1>html5lib parse tree</h1>
+        <section id="input">
+            <h2>Input document</h2>
+            <pre py:content="inputDocument"></pre>
+        </section>
+        <section id="parseTree">
+            <h2>Parse Tree</h2>
+            <pre py:content="parseTree"></pre>
+        </section>
+        <section>
+            <h2>Output innerHTML</h2>
+            <p><a href="${viewURL}">View in browser</a></p>
+            <pre py:content="innerHTML"></pre>
+        </section>
+        <section id="parseErrors">
+            <h2>Parse Errors</h2>
+            <div py:choose="" py:strip="True">
+                <ol py:when="parseErrors">
+                    <li py:for="(line, col), error in parseErrors">line ${line} col ${col}: ${item}</li>
+                </ol>
+                <span py:otherwise="" py:strip="True">No parse errors</span>
+            </div>
+        </section>
+    </body>
+</html>
