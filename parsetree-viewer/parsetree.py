@@ -345,8 +345,11 @@ def cgiMain():
                 resp = ParseTree(document) 
             respStr = resp.responseString()
         except:
-            document.error = document.errors["INTERNAL_ERROR"]
-            respStr = error(document)
+            if "cgitb" in locals():
+                raise
+            else:
+                document.error = document.errors["INTERNAL_ERROR"]
+                respStr = error(document)
     
     print respStr
 
