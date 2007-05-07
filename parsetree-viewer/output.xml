@@ -40,7 +40,7 @@
             <h2>Parse Errors</h2>
             <div py:choose="" py:strip="True">
                 <ol py:when="parseErrors">
-                    <li py:for="(line, col), error in parseErrors">line ${line} col ${col}: ${item}</li>
+                    <li py:for="(line, col), error in parseErrors">line ${line} col ${col}: ${error}</li>
                 </ol>
                 <span py:otherwise="" py:strip="True">No parse errors</span>
             </div>
