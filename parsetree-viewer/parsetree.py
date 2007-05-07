@@ -3,8 +3,8 @@ import urllib
 import httplib2
 import urlparse
 import cgi
-import cgitb
-cgitb.enable()
+#import cgitb
+#cgitb.enable()
 
 import html5lib
 from html5lib.treebuilders import simpletree
@@ -87,7 +87,8 @@ class InnerHTMLHighlighter(object):
         if node.type == simpletree.TextNode.type:
             rv = tag.code(node.value, class_="text")
         elif node.type == simpletree.Element.type:
-            rv = tag.code("<" + node.name, class_=tagClasses["element"])
+            rv = tag("")
+            rv.append(tag.code("<" + node.name, class_=tagClasses["element"]))
             if node.attributes:
                 for key, value in node.attributes.iteritems():
                     rv.append(tag(" ", tag.code(key,
@@ -102,48 +103,55 @@ class InnerHTMLHighlighter(object):
         return rv
 
 class Response(object):
-    templateFilename = "output.xml"
-    
-    def __init__(self, uri, **kwargs):
-        self.parser = html5lib.HTMLParser()    
-        self.uri=uri
-        self.args = kwargs
+    def __init__(self, document):
+        self.parser = html5lib.HTMLParser()
+        self.document = document
         
     def parse(self, source):
         return self.parser.parse(source)
 
-    def responseString(self, source):
+    def responseString(self, document):
         raise NotImplementedError
 
 class ParseTree(Response):
+    max_source_length=1024
     def generateResponseStream(self, source, tree):
-        template = MarkupTemplate(open(self.templateFilename).read())
+        template = MarkupTemplate(open("output.xml").read())
         treeHighlighter = ParseTreeHighlighter()
         htmlHighlighter = InnerHTMLHighlighter()
 
         parseTree = treeHighlighter.makeStream(tree)
         innerHTML = htmlHighlighter.makeStream(tree)
         
-        viewURL = self.viewUrl()
+        #Arguably this should be defined in the document
+        if (len(source) <= self.max_source_length or
+            self.document.uri and len(self.document.uri) < self.max_source_length):
+            viewURL = self.viewUrl()
+        else:
+            viewURL=""
         
         stream = template.generate(inputDocument=source,
                                    parseTree = parseTree,
                                    innerHTML = innerHTML,
                                    parseErrors=self.parser.errors,
-                                   viewURL = viewURL)
+                                   sourceString = source,
+                                   viewURL=viewURL)
         return stream
 
-    def responseString(self, source):
-        self.source = source
+    def responseString(self):
+        source = self.document.source
         tree = self.parse(source)
         source = source.decode(self.parser.tokenizer.stream.charEncoding, "ignore")
         stream = self.generateResponseStream(source, tree)
         return stream.render('html', doctype=("html", "", ""))
 
     def viewUrl(self):
-        parameters = urllib.urlencode({"uri":self.uri or "",
-                                       "source":self.source or "",
-                                       "loaddom":1})
+        if self.document.uri and len(self.document.source)>self.max_source_length:
+            params = {"uri":self.document.uri}
+        else:
+            params = {"source":self.document.source}
+        params["loaddom"]=1
+        parameters = urllib.urlencode(params)
         urlparts = ["", "", "parsetree.py", parameters, ""]
         return urlparse.urlunsplit(urlparts)
 
@@ -206,14 +214,15 @@ class LoadSource(Response):
     attr_val_is_uri=('href', 'src', 'action', 'longdesc')
 
     def rewriteLinks(self, tree):
-        if not self.uri:
+        uri = self.document.uri
+        if not uri:
             return
-        baseUri = urlparse.urlsplit(self.uri)
+        baseUri = urlparse.urlsplit(uri)
         for node in tree:
             if node.type == simpletree.Element.type and node.attributes:
                 for key, value in node.attributes.iteritems():
                     if key in self.attr_val_is_uri:
-                        node.attributes[key] = urlparse.urljoin(self.uri, value)
+                        node.attributes[key] = urlparse.urljoin(uri, value)
 
     def insertHtml5Doctype(self, tree):
         doctype = simpletree.DocumentType("html")
@@ -233,8 +242,8 @@ class LoadSource(Response):
         stream = template.generate(jsCode = jsCode)
         return stream
 
-    def responseString(self, source):
-        tree = self.parse(source)
+    def responseString(self):
+        tree = self.parse(self.document.source)
         self.rewriteLinks(tree)
         stream = self.generateResponseStream(tree)
         doctype=None
@@ -245,54 +254,105 @@ class LoadSource(Response):
         
         return stream.render('html', doctype=doctype)
 
+class Error(Response):
+    def generateResponseStream(self):
+        template = MarkupTemplate(open("error.xml").read())
+        stream = template.generate(document=self.document)
+        return stream
+    
+    def responseString(self):
+        stream = self.generateResponseStream()
+        return stream.render('html', doctype=("html", "", ""))
+
 class Document(object):
+    errors = {"CANT_LOAD":1, "INVALID_URI":2, "INTERNAL_ERROR":3}
     def __init__(self, uri=None, source=None, ua=None):
+        
         self.uri = uri
         self.source = source
-        self.ua = ua
-        self.http = httplib2.Http()
+
         self.error=None
-        if not source and uri:
-            self.source = self.load()
         
-    def load(self):
+        if not source and uri:
+            try:
+                self.source = self.load(ua)
+            except:
+                self.error = self.errors["INTERNAL_ERROR"]
+        elif not source and not uri:
+            self.error = self.errors["INVALID_URI"]
+        
+    def load(self, ua=None):
+        
+        http = httplib2.Http()
         uri = self.uri
+        
+        #Check for invalid URIs
+        if not (uri.startswith("http://") or uri.startswith("https://")):
+            self.error = self.errors["INVALID_URI"]
+            return
+        
+        headers = {}
+        
+        if ua:
+            headers ={"User-Agent":ua}
+        
         response=None
         content=None
-        if uri.startswith("http://") or uri.startswith("https://"):
-            response, content = self.http.request(uri, headers={"User-Agent":self.ua})
-        else:
-            self.error = "Invalid http URI %s"%self.uri
+        
+        try:
+            response, content = http.request(uri, headers=headers)
+        except:
+            self.error = self.errors["CANT_LOAD"]
+        
         if content:
             return content
         else:
-            self.error = "%s \n %n"%(str(response.code), response.reason)
-            return None
+            self.error = self.errors["CANT_LOAD"]
+            return
 
 def cgiMain():
     print "Content-type: text/html; charset=utf-8\n\n"
-    try:
-        form = cgi.FieldStorage()
+    
+    form = cgi.FieldStorage()
+    source = form.getvalue("source")
+    if not source:
         uri = form.getvalue("uri")
-        source = form.getvalue("source")
-        ua = form.getvalue("ua")
-        if source:
-            uri=None
-        loadDOM = form.getvalue("loaddom")
+    else:
+        uri=None
+    ua = form.getvalue("ua")
+    if source:
+        uri=None
+
+    loadDOM = form.getvalue("loaddom")
+    
+    try:
         document = Document(uri=uri, source=source, ua=ua)
     except:
-        raise
-
-    if document.source is None:
-        print document.error
-        return
-    else:
-        if loadDOM:
-            resp = LoadSource(uri)
+        #This should catch any really unexpected error
+        if "cgitb" in locals():
+            raise
         else:
-            resp = ParseTree(uri)
-        respStr = resp.responseString(document.source)
+            print "Unexpected internal error"
+            return
+        
+    if document.error:
+        respStr = error(document)
+    else:
+        try:
+            if loadDOM:
+                resp = LoadSource(document)
+            else:
+                resp = ParseTree(document) 
+            respStr = resp.responseString()
+        except:
+            document.error = document.errors["INTERNAL_ERROR"]
+            respStr = error(document)
+    
     print respStr
 
+def error(document):
+    resp = Error(document)
+    return resp.responseString()
+    
 if __name__ == "__main__":
     cgiMain()

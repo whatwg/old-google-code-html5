@@ -3,28 +3,37 @@
       lang="en">
     <head>
         <title>html5lib Parse Tree</title>
-        <style>
-            code.element-name {color: purple; font-weight: bold;}
-            code.attribute-name { color: black; font-weight: bold; }
-            code.attribute-value { color: blue; font-weight: normal; }
-            code.doctype { color: teal; }
-            code.text_marker { color: gray; }
-            code.comment_marker { color:green; }
-        </style>
+        <link rel="stylesheet" href="/html5/styles.css"/>
     </head>
     <body>
-        <h1>html5lib parse tree</h1>
+        <h1>html5lib Parse Tree</h1>
+        <nav>
+            <li><a href="#input">Input</a></li>
+            <li><a href="#parseTree">Parse Tree</a></li>
+            <li><a href="#innerHTML">innerHTML</a></li>
+            <li><a href="#parseErrors">Errors</a></li>
+        </nav>
         <section id="input">
-            <h2>Input document</h2>
+            <h2>Input Document</h2>
             <pre py:content="inputDocument"></pre>
         </section>
         <section id="parseTree">
             <h2>Parse Tree</h2>
             <pre py:content="parseTree"></pre>
         </section>
-        <section>
+        <section id="innerHTML">
             <h2>Output innerHTML</h2>
-            <p><a href="${viewURL}">View in browser</a></p>
+            <div py:choose="" py:strip="True" py:with="warning='Warning! This has significant known issues with sites that use scripting.'">
+                <form py:when="not viewURL" action="/cgi-bin/parsetree/parsetree.py" method="post">
+                    <p>
+                        <input type="hidden" name="loaddom" value="1"/>
+                        <input type="hidden" name="source" value="${sourceString}"/>
+                        <input type="submit" value="View in Browser" id="view_submit"/>
+                        ${warning}
+                    </p>
+                </form>
+                <p py:otherwise=""><a href="${viewURL}">View In Browser</a> ${warning}</p>
+            </div>
             <pre py:content="innerHTML"></pre>
         </section>
         <section id="parseErrors">
