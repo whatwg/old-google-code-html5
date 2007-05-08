@@ -8,10 +8,12 @@
     <body>
         <h1>html5lib Parse Tree</h1>
         <nav>
+	  <ul>
             <li><a href="#input">Input</a></li>
             <li><a href="#parseTree">Parse Tree</a></li>
             <li><a href="#innerHTML">innerHTML</a></li>
             <li><a href="#parseErrors">Errors</a></li>
+	  </ul>
         </nav>
         <section id="input">
             <h2>Input Document</h2>
