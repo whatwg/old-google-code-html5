@@ -54,5 +54,10 @@ var styleText = document.createTextNode("\
  .WIP { border-color:orange; }\
  .SCS { border-color:green; }\
  ");
-style.appendChild(styleText);
+var an3err
+try { style.appendChild(styleText) } 
+catch(an3err) { 
+if(an3err.number == -0x7FFF0001) style.styleSheet.cssText =
+styleText.nodeValue 
+else throw an3err } 
 document.getElementsByTagName("head")[0].appendChild(style);
