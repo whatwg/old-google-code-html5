@@ -1473,6 +1473,8 @@ color: black; background-color: #fed; content: "author view"} /* thanks Sander T
 /* 4.11.8.10. Implementation risks  */
 
 
+/* written against r794 - 27 May 2007 */
+
 /* 5. Editing  */
 
 
@@ -1480,13 +1482,24 @@ color: black; background-color: #fed; content: "author view"} /* thanks Sander T
 
 
 /* 5.2. The contenteditable attribute  */
-
+#contenteditable+p,
+#contenteditable+p+p+p,
+#contenteditable+p+p+p+p,
+#contenteditable+p+p+p+p+p,
+#contenteditable+p+p+p+p+p+p,
+#contenteditable+p+p+p+p+p+p+p,
+#contenteditable+p+p+p+p+p+p+p+p,
 
 /* 5.2.1. User editing actions  */
-
+#user-editing,
+#user-editing+p,
+#user-editing+p+dl,
+#user-editing+p+dl+p,
 
 /* 5.2.2. Making entire documents editable  */
-
+#making+p+p+p,
+#making+p+p+p+p,
+#making+p+p+p+p+p+p,
 
 /* 5.3. Drag and drop  */
 
@@ -1498,55 +1511,136 @@ color: black; background-color: #fed; content: "author view"} /* thanks Sander T
 
 
 /* 5.3.3. Drag-and-drop processing model  */
-
+#drag-and-drop,
+#drag-and-drop+p,
+#drag-and-drop+p+p,
+#drag-and-drop+p+p+p,
+#drag-and-drop+p+p+p+p,
+#drag-and-drop+p+p+p+p+p,
+#drag-and-drop+p+p+p+p+p+p,
+#drag-and-drop+p+p+p+p+p+p+p,
+#drag-and-drop+p+p+p+p+p+p+p+p,
+#drag-and-drop+p+p+p+p+p+p+p+p+p,
+#drag-and-drop+p+p+p+p+p+p+p+p+p+p,
+#drag-and-drop+p+p+p+p+p+p+p+p+p+p+p,
+#drag-and-drop+p+p+p+p+p+p+p+p+p+p+p+p,
+#drag-and-drop+p+p+p+p+p+p+p+p+p+p+p+p+ol,
+#drag-and-drop+p+p+p+p+p+p+p+p+p+p+p+p+ol+p,
+#drag-and-drop+p+p+p+p+p+p+p+p+p+p+p+p+ol+p+p,
+#drag-and-drop+p+p+p+p+p+p+p+p+p+p+p+p+ol+p+p+p,
+#drag-and-drop+p+p+p+p+p+p+p+p+p+p+p+p+ol+p+p+p+p,
+#drag-and-drop+p+p+p+p+p+p+p+p+p+p+p+p+ol+p+p+p+p+p,
+#drag-and-drop+p+p+p+p+p+p+p+p+p+p+p+p+ol+p+p+p+p+p+p,
+#drag-and-drop+p+p+p+p+p+p+p+p+p+p+p+p+ol+p+p+p+p+p+p+ol,
 
 /* 5.3.3.1. When the drag-and-drop operation starts or ends in another document  */
-
+#when-the,
+#when-the+p,
 
 /* 5.3.3.2. When the drag-and-drop operation starts or ends in another application  */
-
+#when-the0,
+#when-the0+p,
+#when-the0+p+p,
+#when-the0+p+p+p,
 
 /* 5.3.4. The draggable attribute  */
-
+#the-draggable+p+p+p,
+#the-draggable+p+p+p+p,
+#the-draggable+p+p+p+p+p,
+#the-draggable+p+p+p+p+p+p,
+#the-draggable+p+p+p+p+p+p+p,
 
 /* 5.3.5. Copy and paste  */
 
 
 /* 5.3.5.1. Copy to clipboard  */
-
+#copy-to,
+#copy-to+p,
 
 /* 5.3.5.2. Cut to clipboard  */
-
+#cut-to,
+#cut-to+p,
 
 /* 5.3.5.3. Paste from clipboard  */
-
+#paste,
+#paste+p,
+#paste+p+p,
 
 /* 5.3.5.4. Paste from selection  */
-
+#paste0,
+#paste0+p,
+#paste0+p+p,
 
 /* 5.3.6. Security risks in the drag-and-drop model  */
-
+#security6,
+#security6+p,
+#security6+p+p,
+#security6+p+p+p,
 
 /* 5.4. Undo history  */
-
+#undo,
+#undo+p,
+#undo+p+p,
+#undo+p+p+p,
+#undo+p+p+p+p,
+#undo+p+p+p+p+ul,
+#undo+p+p+p+p+ul+p,
+#undo+p+p+p+p+ul+p+p,
 
 /* 5.4.1. The UndoManager interface  */
-
+#the-undomanager,
+#the-undomanager+div,
+#the-undomanager+div+p,
+#the-undomanager+div+p+pre,
+#the-undomanager+div+p+pre+p,
+#the-undomanager+div+p+pre+p+p,
+#the-undomanager+div+p+pre+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p+p+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p+p+p+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p+p+p+p+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p+p+p+p+p+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p+p+p+p+p+p+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p+p+p+p+p+p+p+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p+p+p+p+p+p+p+p+p+p+p,
+#the-undomanager+div+p+pre+p+p+p+p+p+p+p+p+p+p+p+p+p+p+p,
 
 /* 5.4.2. Undo: moving back in the undo transaction history  */
-
+#undo-moving,
+#undo-moving+p,
+#undo-moving+p+p,
+#undo-moving+p+p+p,
+#undo-moving+p+p+p+p,
+#undo-moving+p+p+p+p+p,
+#undo-moving+p+p+p+p+p+p,
 
 /* 5.4.3. Redo: moving forward in the undo transaction history  */
-
+#redo-moving,
+#redo-moving+p,
+#redo-moving+p+p,
+#redo-moving+p+p+p,
+#redo-moving+p+p+p+p,
+#redo-moving+p+p+p+p+p,
+#redo-moving+p+p+p+p+p+p,
 
 /* 5.4.4. The UndoManagerEvent interface and the undo and redo events  */
-
+#the-undomanagerevent,
+#the-undomanagerevent+pre,
+#the-undomanagerevent+pre+p,
+#the-undomanagerevent+pre+p+p,
+#the-undomanagerevent+pre+p+p+p,
 
 /* 5.4.5. Implementation notes  */
-
+#implementation0,
+#implementation0+p,
 
 /* 5.5. Command APIs  */
-
+#command+p+p+p+p,
+#command+p+p+p+p+p,
+#command+p+p+p+p+p+dl,
 
 /* 5.6. The text selection APIs  */
 
