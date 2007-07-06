@@ -1,5 +1,0 @@
-Please do not change anything in the data/ directory. Instead, update the test
-material from html5lib and use that:
-
-  http://code.google.com/p/html5lib/
-  http://html5lib.googlecode.com/svn/trunk/testdata/tree-construction/
