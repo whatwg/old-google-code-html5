@@ -22,6 +22,9 @@ The parser was run with scripting enabled but no scripts supported, so
 <noscript> elements were treated as CDATA blocks but no script blocks
 were executed.
 
+
+METHODOLOGY
+
 The sample data consisted of several billion documents from Google's
 index. An attempt was made to eliminate duplicates from the
 sample. Documents that did not appear, a priori, to be HTML documents
