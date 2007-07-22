@@ -1,3 +1,15 @@
+String.prototype.toAsciiLowerCase = function () {
+  var output = "";
+  for (var i = 0, len = this.length; i < len; ++i) {
+    if (this.charCodeAt(i) >= 0x41 && this.charCodeAt(i) <= 0x5A) {
+      output += String.fromCharCode(this.charCodeAt(i) + 0x20)
+    } else {
+      output += this.charAt(i);
+    }
+  }
+  return output;
+}
+
 function indent(ancestors) {
   var str = "";
   if (ancestors > 0) {
@@ -46,7 +58,7 @@ function dom2string(node, ancestors) {
         }
         break;
       case 1:
-        str += "<" + current.nodeName.toLowerCase() + '>'; // seems there's no way to get the name in a case-preserving manner :-(
+        str += "<" + current.nodeName.toAsciiLowerCase() + '>'; // seems there's no way to get the name in a case-preserving manner :-(
         if (parent != current.parentNode) {
           return str += ' (misnested... aborting)';
         } else {
