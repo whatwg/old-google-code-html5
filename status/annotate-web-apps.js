@@ -16,7 +16,8 @@ function annotateToc() {
     toc.parentNode.insertBefore(form, toc)
     form.appendChild(toc);
     var div = document.createElement("div");
-    div.innerHTML = "<p><label>Email: <input type=email name=email required></label></p>\
+    div.innerHTML = "<pre id=annotation-log></pre>\
+                     <p><label>Email: <input type=email name=email required></label></p>\
                      <p><label>Rationale for changes: <input name=rationale required></p>\
                      <p><input type=submit value=Save></p>";
     form.appendChild(div);
@@ -28,7 +29,10 @@ function annotateToc() {
       link = links[i];
       id = link.href.split("#")[1];
       span = document.createElement("span");
-      span.innerHTML = " <label><input type=radio name=" + id + " value=TBW>TBW</label> <label><input type=radio name=" + id + " value=WIP>WIP</label> <label><input type=radio name=" + id + " value=SCS>SCS</label> <label><input type=radio name=" + id + " value=none checked>none</label>";
+      span.innerHTML = " <label><input type=radio name=" + id + " value=TBW>TBW</label>\
+                         <label><input type=radio name=" + id + " value=WIP>WIP</label>\
+                         <label><input type=radio name=" + id + " value=SCS>SCS</label>\
+                         <label><input type=radio name=" + id + " value=none checked>none</label>";
       if (link.nextSibling)
         link.parentNode.insertBefore(span, link.nextSibling)
       else
@@ -39,6 +43,7 @@ function annotateToc() {
 annotateToc();
 
 function annotateLoad(data) {
+	var log = "";
 	var sections = data.getElementsByTagName("section");
 	for (var i = 0; i < sections.length; i++) {
 		var id = sections[i].getAttribute("id");
@@ -75,12 +80,18 @@ function annotateLoad(data) {
 			} else if (status == "WIP") {
 				r[1].checked = true;
 				r[1].parentNode.className = "initial";
-			} else {
+			} else if (status == "SCS") {
 				r[2].checked = true;
 				r[2].parentNode.className = "initial";
+			} else {
+				log += "Didn't recognize status " + status + ", you may have a cached version of the annotation script.\n";
 			}
 		}
+	} else {
+		log += "The ID " + id + " wasn't found, the document might have changed in structure.\n";
 	}
+	if (log)
+	  document.getElementById("annotation-log").innerHTML = log;
 }
 
 function annotateHandle() {
