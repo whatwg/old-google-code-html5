@@ -3,6 +3,41 @@
  * Contributor: Simon Pieters <zcorpan@gmail.com>
  */
 
+function annotateToc() {
+  var toc = document.getElementById("contents");
+  if (toc) {
+    toc.innerHTML += " <button onclick=\"parentNode.className += ' edit'\">Edit markers</button>";
+    toc = toc.nextSibling;
+    while (toc.nodeType != 1)
+      toc = toc.nextSibling;
+    var form = document.createElement("form");
+    form.method = "post";
+    form.action = "http://status.whatwg.org/update-markers.php";
+    toc.parentNode.insertBefore(form, toc)
+    form.appendChild(toc);
+    var div = document.createElement("div");
+    div.innerHTML = "<p><label>Email: <input type=email name=email required></label></p>\
+                     <p><label>Rationale for changes: <input name=rationale required></p>\
+                     <p><input type=submit value=Save></p>";
+    form.appendChild(div);
+    var links = toc.getElementsByTagName("a");
+    var link;
+    var span;
+    var id;
+    for (var i = 0, len = links.length; i < len; ++i) {
+      link = links[i];
+      id = link.href.split("#")[1];
+      span = document.createElement("span");
+      span.innerHTML = " <label><input type=radio name=" + id + " value=TBW>TBW</label> <label><input type=radio name=" + id + " value=WIP>WIP</label> <label><input type=radio name=" + id + " value=SCS>SCS</label> <label><input type=radio name=" + id + " value=none checked>none</label>";
+      if (link.nextSibling)
+        link.parentNode.insertBefore(span, link.nextSibling)
+      else
+        link.parentNode.appendChild(span);
+    }
+  }
+}
+annotateToc();
+
 function annotateLoad(data) {
 	var sections = data.getElementsByTagName("section");
 	for (var i = 0; i < sections.length; i++) {
@@ -32,6 +67,19 @@ function annotateLoad(data) {
 				div.appendChild(current);
 			}
 		}
+		var r = document.forms[0][id];
+		if (r) {
+			if (status == "TBW") {
+				r[0].checked = true;
+				r[0].parentNode.className = "initial";
+			} else if (status == "WIP") {
+				r[1].checked = true;
+				r[1].parentNode.className = "initial";
+			} else {
+				r[2].checked = true;
+				r[2].parentNode.className = "initial";
+			}
+		}
 	}
 }
 
@@ -53,6 +101,13 @@ var styleText = document.createTextNode("\
  .TBW { border-color:red; }\
  .WIP { border-color:orange; }\
  .SCS { border-color:green; }\
+ .toc label { font-size:x-small; display:none; }\
+ .toc input { vertical-align:bottom; }\
+ .toc .initial { background-color:yellow; font-weight:bold; }\
+ .toc + div { display:none; }\
+ .edit button { display:none; }\
+ .edit + form .toc label { display:inline; }\
+ .edit + form .toc + div { display:block; }\
  ");
 var an3err
 try { style.appendChild(styleText) } 
@@ -61,6 +116,7 @@ if(an3err.number == -0x7FFF0001) style.styleSheet.cssText =
 styleText.nodeValue 
 else throw an3err } 
 document.getElementsByTagName("head")[0].appendChild(style);
+
 
 /*
  * Author: Lachlan Hunt - http://lachy.id.au/
