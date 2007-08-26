@@ -6,7 +6,7 @@
 function annotateToc() {
   var toc = document.getElementById("contents");
   if (toc) {
-    toc.innerHTML += " <button onclick=\"parentNode.className += ' edit'\">Edit markers</button>";
+    toc.innerHTML += " <button onclick=\"parentNode.className = /\ edit$/.test(parentNode.className) ? parentNode.className.replace(' edit','') : parentNode.className += ' edit'; innerHTML = innerHTML == 'Edit markers' ? 'Hide interface' : 'Edit markers'\">Edit markers</button>";
     toc = toc.nextSibling;
     while (toc.nodeType != 1)
       toc = toc.nextSibling;
