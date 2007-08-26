@@ -84,11 +84,11 @@ function annotateLoad(data) {
 				r[2].checked = true;
 				r[2].parentNode.className = "initial";
 			} else {
-				log += "Didn't recognize status " + status + ", you may have a cached version of the annotation script.\n";
+				log += "Didn't recognize status " + status + ".\n";
 			}
+		} else {
+			log += "The ID " + id + " wasn't found.\n";
 		}
-	} else {
-		log += "The ID " + id + " wasn't found, the document might have changed in structure.\n";
 	}
 	if (log)
 	  document.getElementById("annotation-log").innerHTML = log;
