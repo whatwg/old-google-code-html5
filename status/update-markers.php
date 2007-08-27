@@ -13,7 +13,7 @@ foreach ($_REQUEST as $name => $value) {
 		$email = $value;
 	} elseif ($name == 'rationale') {
 		$rationale = $value;
-	} else {
+	} elseif ($value != '') {
 		$status[$name] = $value;
 	}
 }
@@ -35,7 +35,7 @@ function getMissingInfo($email, $rationale, $status) {
 		<p><input type="submit" value="save">
 <?php
 	foreach ($status as $name => $value) {
-		echo "		<input type=\"hidden\" name=\"$name\" value==\"$value\">\n";
+		echo "		<input type=\"hidden\" name=\"$name\" value=\"$value\">\n";
 	}
 ?>        
     </form>
