@@ -18,7 +18,7 @@ function annotateToc() {
     var div = document.createElement("div");
     div.innerHTML = "<pre id=annotation-log></pre>\
                      <p><label>Email: <input type=email name=email required></label></p>\
-                     <p><label>Rationale for changes: <input name=rationale required></p>\
+                     <p><label>Rationale for changes: <input name=rationale required maxlength=125 size=70></p>\
                      <p><input type=submit value=Save></p>";
     form.appendChild(div);
     var links = toc.getElementsByTagName("a");
