@@ -32,7 +32,7 @@ function annotateToc() {
       span.innerHTML = " <label><input type=radio name=" + id + " value=TBW>TBW</label>\
                          <label><input type=radio name=" + id + " value=WIP>WIP</label>\
                          <label><input type=radio name=" + id + " value=SCS>SCS</label>\
-                         <label><input type=radio name=" + id + " value=none checked>none</label>";
+                         <label><input type=radio name=" + id + " value='' checked>none</label>";
       if (link.nextSibling)
         link.parentNode.insertBefore(span, link.nextSibling)
       else
@@ -76,15 +76,21 @@ function annotateLoad(data) {
 		if (r) {
 			if (status == "TBW") {
 				r[0].checked = true;
+				r[0].value = "";
 				r[0].parentNode.className = "initial";
+				r[3].value = "none";
 			} else if (status == "WIP") {
 				r[1].checked = true;
+				r[1].value = "";
 				r[1].parentNode.className = "initial";
+				r[3].value = "none";
 			} else if (status == "SCS") {
 				r[2].checked = true;
+				r[2].value = "";
 				r[2].parentNode.className = "initial";
+				r[3].value = "none";
 			} else {
-				log += "Didn't recognize status " + status + ".\n";
+				log += "Didn't recognize status " + status + ". Do you have a cached version of the <a href=http://status.whatwg.org/annotate-web-apps.js>annotation script</a>?\n";
 			}
 		} else {
 			log += "The ID " + id + " wasn't found.\n";
