@@ -6,16 +6,19 @@ require_once "mail-utf8.php";
  * TODO:
  *
  * Twitter message: "Status Update: $rationale"
- * Limit rationale to 125 chars
  * Required input validation:
- * - check email address and rationale validity to prevent hackers doing bad stuff
- * - Check for status values: TBW, WIP, SCS and none
+ * - check rationale validity to prevent hackers doing bad stuff ...?
  * 
  * Finish writing the code to send appropriate emails
  * - Confirmation requests probably to Hixie
  * - Confirmed status updates to commit-watches
  * Write the confirmation system to check in updates to the DB
  */
+
+function is_valid_email($email) {
+	$pattern = "/^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i";
+	return preg_match($pattern, $email);
+}
 
 ?>
 <!DOCTYPE html>
@@ -28,16 +31,16 @@ $status = array();
 // Get the values from the REQUEST parameters
 foreach ($_REQUEST as $name => $value) {
 	if ($name == 'email') {
-		$email = $value;
+		$email = $value; // XXX do stripslashes() here and below?
 	} elseif ($name == 'rationale') {
 		$rationale = $value;
-	} elseif ($value != '') {
+	} elseif ($value != '' && ($value == 'TBW' || $value == 'WIP' || $value == 'SCS' || $value == 'none')) {
 		$status[$name] = $value;
 	}
 }
 
 // Ensure that email and rationale were provided
-if ($email == '' || $rationale == '') {
+if ($email == '' || !is_valid_email($email) || $rationale == '' || mb_strlen($rationale) > 125) {
 	getMissingInfo($email, $rationale, $status);
 } else {
 	$body = getMailConfirmRequest($email, $rationale, $status);
@@ -48,14 +51,14 @@ if ($email == '' || $rationale == '') {
 function getMissingInfo($email, $rationale, $status) {
 ?>
 	<title>Update Status Error</title>
-    <p>You must provide an email address and rationale
+    <p>You must provide a valid email address and rationale that is &le; 125 characters.</p>
 	<form method="post" action="">
-		<p><label for="email">Email: <input type="text" name="email" id="email" value="<?=$email?>"></label>
-		<p><label for="rationale">Rationale: <input type="text" name="rationale" id="rationale" maxlength="125" value="<?=$rationale?>"></label>
+		<p><label for="email">Email: <input type="email" name="email" id="email" value="<?php echo htmlspecialchars($email); ?>"></label>
+		<p><label for="rationale">Rationale: <input type="text" name="rationale" id="rationale" maxlength="125" size="70" value="<?php echo htmlspecialchars($rationale); ?>"></label>
 		<p><input type="submit" value="save">
 <?php
 	foreach ($status as $name => $value) {
-		echo "		<input type=\"hidden\" name=\"$name\" value=\"$value\">\n";
+		echo "		<input type=\"hidden\" name=\"" . htmlspecialchars($name); . "\" value=\"" . htmlspecialchars($value) . "\">\n";
 	}
 ?>        
     </form>
@@ -72,7 +75,7 @@ function getMailConfirmRequest($email, $rationale, $status) {
 		$body .= "$name: $value\n";
 		$url  .= '&'.urlencode($name).'='.urlencode($value);
 	}
-
+	
 	$body .= "\nConfirm these changes:\n$url\n";
 	return $body;
 }
