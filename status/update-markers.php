@@ -1,28 +1,23 @@
 <?php
 header("Content-Type: text/html; charset=UTF-8");
-require_once "mail-utf8.php";
+require_once "Email.php";
+require_once "encoding-functions.php";
 
 /*
+ * IMPORTANT: when testing for yourself, change the email address to your own
+ *            in the call to $mail->addRecipient(...)
+ *
  * TODO:
  *
  * Twitter message: "Status Update: $rationale"
- * Required input validation:
- * - check rationale validity to prevent hackers doing bad stuff ...?
  * 
  * Finish writing the code to send appropriate emails
  * - Confirmation requests probably to Hixie
  * - Confirmed status updates to commit-watches
  * Write the confirmation system to check in updates to the DB
  */
-
-function is_valid_email($email) {
-	$pattern = "/^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i";
-	return preg_match($pattern, $email);
-}
-
 ?>
 <!DOCTYPE html>
-
 <?php
 $email = '';
 $rationale = '';
@@ -34,18 +29,29 @@ foreach ($_REQUEST as $name => $value) {
 		$email = $value; // XXX do stripslashes() here and below?
 	} elseif ($name == 'rationale') {
 		$rationale = $value;
-	} elseif ($value != '' && ($value == 'TBW' || $value == 'WIP' || $value == 'SCS' || $value == 'none')) {
+	} elseif ($value == 'TBW' || $value == 'WIP' || $value == 'SCS' || $value == 'none') {
+		// Ignore any other values, including empty values.
 		$status[$name] = $value;
 	}
 }
 
 // Ensure that email and rationale were provided
-if ($email == '' || !is_valid_email($email) || $rationale == '' || mb_strlen($rationale) > 125) {
+if ($email == '' || !isValidEmail($email)
+ || $rationale == '' || !isUTF8($rationale) || mb_strlen($rationale) > 125) {
 	getMissingInfo($email, $rationale, $status);
 } else {
 	$body = getMailConfirmRequest($email, $rationale, $status);
-//	sendMail('HTML5 Status Test', 'user@example.com', $body);
-	outputConfirmation($body);
+	$sig = "HTML5 Status Updates\nhttp://www.whatwg.org/html5";
+
+	$mail = new Email();
+	$mail->setSubject("HTML5 Status Update");
+	$mail->addRecipient('To', 'Lachlan Hunt', 'whatwg@lachy.id.au');
+	$mail->setFrom("WHATWG", "whatwg@whatwg.org");
+	$mail->setSignature($sig);
+	$mail->setText($body);
+	$mail->send();
+
+	outputConfirmation($body, $sig);
 }
 
 function getMissingInfo($email, $rationale, $status) {
@@ -58,7 +64,7 @@ function getMissingInfo($email, $rationale, $status) {
 		<p><input type="submit" value="save">
 <?php
 	foreach ($status as $name => $value) {
-		echo "		<input type=\"hidden\" name=\"" . htmlspecialchars($name); . "\" value=\"" . htmlspecialchars($value) . "\">\n";
+		echo "		<input type=\"hidden\" name=\"" . htmlspecialchars($name) . "\" value=\"" . htmlspecialchars($value) . "\">\n";
 	}
 ?>        
     </form>
@@ -80,8 +86,7 @@ function getMailConfirmRequest($email, $rationale, $status) {
 	return $body;
 }
 
-function outputConfirmation($body) {
-	$sig      = "HTML5 Status Updates\nhttp://www.w3.org/html/\nhttp://www.whatwg.org/";
+function outputConfirmation($body, $sig) {
 ?>
 	<title>Update Status Confirmation</title>
 	<p>Your changes need to be confirmed before they will be committed.
@@ -93,7 +98,7 @@ function outputConfirmation($body) {
 function updateDB($email, $rationale, $status) {
 ?>
 	<title>Update Status</title>
-	<p>A confirmation email has been sent.
+	<p>This feature has not been implemented yet.
 <?php
 }
 ?>
