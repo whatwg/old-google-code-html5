@@ -36,7 +36,7 @@ foreach ($_REQUEST as $name => $value) {
 }
 
 // Ensure that email and rationale were provided
-if ($email == '' || !isValidEmail($email)
+if ($email == '' || !Email::isValidEmail($email)
  || $rationale == '' || !isUTF8($rationale) || mb_strlen($rationale) > 125) {
 	getMissingInfo($email, $rationale, $status);
 } else {
@@ -45,8 +45,8 @@ if ($email == '' || !isValidEmail($email)
 
 	$mail = new Email();
 	$mail->setSubject("HTML5 Status Update");
-	$mail->addRecipient('To', 'Lachlan Hunt', 'whatwg@lachy.id.au');
-	$mail->setFrom("WHATWG", "whatwg@whatwg.org");
+	$mail->addRecipient('To', 'whatwg@lachy.id.au', 'Lachlan Hunt');
+	$mail->setFrom("whatwg@whatwg.org", "WHATWG");
 	$mail->setSignature($sig);
 	$mail->setText($body);
 	$mail->send();
