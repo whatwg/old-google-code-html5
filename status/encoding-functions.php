@@ -22,7 +22,7 @@ function isCP1252($str) {
 
 if (!function_exists('mb_strlen')) {
 	function mb_strlen($str) {
-		return preg_match_all('/[\x00-\x7F\xC0-\xFD]/', $str, $matches);
+		return strlen(utf8_decode($str));
 	}
 }
 ?>
