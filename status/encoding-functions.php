@@ -19,3 +19,10 @@ function isISO88591($str) {
 function isCP1252($str) {
 	return preg_match('/^([\x09\x0A\x0D\x20-\x7E\x80\x82-\x8C\x8E\x91-\x9C\x9E-\xFF])*$/', $str);
 }
+
+if (!function_exists('mb_strlen')) {
+	function mb_strlen($str) {
+		return preg_match_all('/[\x00-\x7F\xC0-\xFD]/', $str, $matches);
+	}
+}
+?>
