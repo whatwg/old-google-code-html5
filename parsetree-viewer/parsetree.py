@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.4
+import sys
+import os
+#sys.path.insert(0, os.path.expanduser("~/lib/python/"))
+#sys.path.insert(0, os.path.expanduser("~/lib/python2.4/site-packages/"))
+
 import urllib
 import httplib2
 import urlparse
@@ -42,7 +47,6 @@ class ParseTreeHighlighter(object):
 
     def serializeNode(self, node, indent):
         rv = tag(" "*indent+"|")
-
         if node.type == simpletree.TextNode.type:
             text = node.value.split("\n")
             rv.append(tag(tag.code("#text: ", class_=tagClasses["text_marker"]),
@@ -85,12 +89,20 @@ class InnerHTMLHighlighter(object):
     
     def serializeNode(self, node, indent):
         if node.type == simpletree.TextNode.type:
-            rv = tag.code(node.value, class_="text")
+            if (node.parent.name not in html5lib.constants.rcdataElements
+                and node.parent.name != "plaintext"):
+                value = cgi.escape(node.value, True)
+            else:
+                value = node.value
+            if node.parent.name in ("pre", "textarea"):
+                value = "\n" + value
+            rv = tag.code(value, class_="text")
         elif node.type == simpletree.Element.type:
             rv = tag("")
             rv.append(tag.code("<" + node.name, class_=tagClasses["element"]))
             if node.attributes:
                 for key, value in node.attributes.iteritems():
+                    value = cgi.escape(value, True)
                     rv.append(tag(" ", tag.code(key,
                                                 class_=tagClasses["attr_name"]),
                               "=", tag.code("\""+value+"\"",

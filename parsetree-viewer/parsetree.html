@@ -3,19 +3,7 @@
     <head>
         <title>html5lib Based HTML5 Parse Trees</title>
         <link rel="stylesheet" href="styles.css">
-        <script>
-            function sourceFormMethod() {
-                var max_length=1024;
-                var sourceLength = document.getElementById("input_source").value.length;
-                var form = document.getElementById("form_source");
-                if (sourceLength <= max_length) {
-                    form.method="get";
-                    }
-                else {
-                    form.method = "post";
-                };
-            };
-        </script>
+        <script src="parsetree_helper.js"></script>
     </head>
     <body>
         <h1>html5lib Based HTML5 Parser</h1>

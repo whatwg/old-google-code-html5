@@ -3,7 +3,8 @@
       lang="en">
     <head>
         <title>html5lib Parse Tree</title>
-        <link rel="stylesheet" href="/html5/styles.css"/>
+        <script src="/parsetree_helper.js"></script>
+        <link rel="stylesheet" href="/styles.css"/>
     </head>
     <body>
         <h1>html5lib Parse Tree</h1>
@@ -17,14 +18,13 @@
         </nav>
         <section id="input">
             <h2>Input Document</h2>
-            <pre py:content="inputDocument"></pre>
+            <form action="" method="post">
+                <textarea py:content="inputDocument" rows="20" cols="80" accept="text/html" id="input_source" onchange="sourceFormMethod();"></textarea>
+                <input type="submit" value="Parse"/>
+            </form>
         </section>
         <section id="parseTree">
             <h2>Parse Tree</h2>
-            <pre py:content="parseTree"></pre>
-        </section>
-        <section id="innerHTML">
-            <h2>Output innerHTML</h2>
             <div py:choose="" py:strip="True" py:with="warning='Warning! This has significant known issues with sites that use scripting.'">
                 <form py:when="not viewURL" action="/cgi-bin/parsetree/parsetree.py" method="post">
                     <p>
@@ -36,6 +36,10 @@
                 </form>
                 <p py:otherwise=""><a href="${viewURL}">View In Browser</a> ${warning}</p>
             </div>
+            <pre py:content="parseTree"></pre>
+        </section>
+        <section id="innerHTML">
+            <h2>Output innerHTML</h2>
             <pre py:content="innerHTML"></pre>
         </section>
         <section id="parseErrors">
