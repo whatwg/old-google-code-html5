@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Table Inspector</title>
+        <style>
+            input[type="url"] {width:30em;}
+            div.subset {margin-left:2em;}
+        </style>
+        <link rel="stylesheet" href="table.css" type="text/css">
+        <script>
+        algorithm_options = {
+            "html4":["scope", "headers"],
+            "html5":[],
+            "experimental":["scope", "headers", "b_headings", "strong_headings"]
+        };
+        
+        function loadPage() {
+            var input_elements = document.getElementsByTagName("input");
+            var algorithm_elements = [];
+            for (var i=0; i<input_elements.length; i++) {
+                var element = input_elements[i];
+                if (element.hasAttribute("name") & element.getAttribute("name") == "algorithm") {
+                    algorithm_elements.push(element);
+                };
+            };
+            for (var i=0; i<algorithm_elements.length; i++) {
+                var element = algorithm_elements[i];
+                if (element.hasAttribute("checked")) {
+                    setAlgorithmOptions(element);
+                };
+                element.addEventListener("change", algorithmChange, false);
+            };
+        };
+        
+        function algorithmChange(event) {
+            var element = event.currentTarget;
+            setAlgorithmOptions(element);
+        };
+        
+        function setAlgorithmOptions(element) {
+            var name = element.getAttribute("value");
+            var enabled_options = algorithm_options[name];
+            var input_elements = document.getElementsByTagName("input");
+            var option_elements = [];
+
+            for (var i=0; i<input_elements.length; i++) {
+                var element = input_elements[i];
+                if (element.hasAttribute("type") & element.getAttribute("type") == "checkbox") {
+                    option_elements.push(element);
+                };
+            };
+            
+            for (var i=0; i<option_elements.length; i++) {
+                var option = option_elements[i];
+                var option_name = option.getAttribute("name");
+                option_enabled=false;
+                for (var j=0; j<enabled_options.length; j++) {
+                    if (enabled_options[j] == option_name) {
+                        option_enabled = true;
+                        break;
+                    };
+                };
+                if ((option_enabled) & option.hasAttribute("disabled")) {
+                    option.removeAttribute("disabled");
+                } else if (option_enabled == false) {
+                    option.setAttribute("disabled", "disabled");
+                };
+            };
+        };
+        
+        
+        </script>
+    </head>
+    <body onload="loadPage();">
+        <h1>Table Inspector</h1>
+        <form action="/cgi-bin/tables/table_inspector.py">
+            <p>
+            <label>
+                Document to inspect:
+                <input type="url" name="uri">
+            </label>
+            </p>
+            <div>
+                <fieldset>
+                    <legend>Association algorithm</legend>
+                <p>
+                    <label>
+                        <input type="radio" id="al_html4", name="algorithm" value="html4" checked> HTML 4
+                    </label>
+                <p>
+                    <label>
+                        <input type="radio" id="al_html5", name="algorithm" value="html5"> HTML 5
+                    </label>
+                <p>
+                    <label>
+                        <input type="radio" id="al_experimental", name="algorithm" value="experimental"> Experimental
+                    </label>
+                </fieldset>
+            </div>
+            <div>
+                <fieldset>
+                    <legend>Algorithm options</legend>
+                <p>
+                    <label>
+                        Use scope attribute:
+                        <input type="checkbox" name="scope" checked value="1">
+                    </label>
+                <p>
+                    <label>
+                        Use headers attribute:
+                        <input type="checkbox" name="headers" checked value="1">
+                    </label>
+                <p>
+                    <label>
+                        Interprert &lt;td>&lt;b> as heading:
+                        <input type="checkbox" name="b_headings" checked value="1">
+                    </label>
+                <p>
+                    <label>
+                        Interprert &lt;td>&lt;strong> as heading:
+                        <input type="checkbox" name="strong_headings" checked value="1">
+                    </label>
+                </fieldset>
+            </div>
+            <input type="submit" value="Inspect">
+        </form>
+    </body>
+</html>
