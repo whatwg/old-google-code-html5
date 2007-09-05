@@ -11,7 +11,8 @@
         algorithm_options = {
             "html4":["scope", "headers"],
             "html5":[],
-            "experimental":["scope", "headers", "b_headings", "strong_headings"]
+            "experimental":["scope", "headers", "b_headings", "strong_headings"],
+            "smartcolspan":[]
         };
         
         function loadPage() {
@@ -94,6 +95,10 @@
                 <p>
                     <label>
                         <input type="radio" id="al_experimental", name="algorithm" value="experimental"> Experimental
+                    </label>
+                <p>
+                    <label>
+                        <input type="radio" id="al_smartcolspan", name="algorithm" value="smartcolspan"> Smart Colspan
                     </label>
                 </fieldset>
             </div>

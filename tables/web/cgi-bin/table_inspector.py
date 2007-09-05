@@ -17,7 +17,7 @@ from genshi.core import START, END, TEXT, COMMENT, DOCTYPE
     
 import tableparser
 import headers
-from headers import html4, html5, experimental
+from headers import html4, html5, experimental, smartcolspan
 
 template_filename = "table_output.html"
 
@@ -176,6 +176,8 @@ def main():
             heading_parser = experimental.HeadingMatcher(use_scope, use_headers,
                                                          use_td_strong_headings,
                                                          use_td_b_headings)
+        elif use_algorithm == "smartcolspan":
+            heading_parser = smartcolspan.HeadingMatcher()
         else:
             raise
     
