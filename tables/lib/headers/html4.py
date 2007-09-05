@@ -42,7 +42,10 @@ class HeadingMatcher(object):
             for current_cell in table.iterCells((start_x, start_y),
                                                 axis=axis, dir=-1):
                 if (self.isHeading(table, current_cell) and
-                    current_cell not in axis_headers):
+                    current_cell not in axis_headers and
+                    (not self.useScopeAttr or
+                     not "scope" in cell.element.attrib)):
+                    
                     axis_headers.append(current_cell)
                     #If a header cell has the headers attribute set,
                     #then the headers referenced by this attribute are
