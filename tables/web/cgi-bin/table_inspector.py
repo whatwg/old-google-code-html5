@@ -156,7 +156,7 @@ def tableToStream(table_tree, heading_parser, table_id):
     return (table, GenshiAdapter(tw, annotated_tree))
 
 def main():
-    print "content-type:text/html;\n\n"
+    print "content-type:text/html;charset=utf-8\n\n"
     form = cgi.FieldStorage()
     uri = True and form.getfirst("uri") or ""
     if urlparse.urlsplit(uri)[0] not in ("http", "https"):
