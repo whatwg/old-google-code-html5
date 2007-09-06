@@ -81,12 +81,15 @@ def copySubtree(in_root, out_root):
             new_element = lxml.etree.SubElement(out_root, element.tag, attrib=element.attrib)
             copySubtree(element, new_element)
 
-def addClass(element, class_name):
+def addStringListAttr(attr_name, element, value):
     """Add a class name to an element""";
-    if "class" in element.attrib:
-        element.attrib["class"] += " " + class_name
+    if attr_name in element.attrib:
+        element.attrib[attr_name] += " " + value
     else:
-        element.attrib["class"] = class_name
+        element.attrib[attr_name] = value
+
+def addClass(element, class_name):
+    return addStringListAttr("class", element, class_name)
 
 def annotateTable(table_tree, table, heading_parser, table_id):
     """Take an input table element and return the table with each cell annotated
@@ -107,12 +110,17 @@ def annotateTable(table_tree, table, heading_parser, table_id):
     
     #Add classnames to all headings
     heading_classnames = {}
+    heading_ids = {}
     for i, (in_element, out_element) in enumerate(element_map.iteritems()):
         cell = table.getCellByElement(in_element)
         if cell is not None and heading_parser.isHeading(table, cell):
             class_name = "__tableparser_heading_classname_%s_%i"%(table_id, i)
+            id = "__tableparser_heading_id_%s_%i"%(table_id, i)
             addClass(out_element, class_name)
+            out_element.attrib['id'] = id
             heading_classnames[cell] = class_name
+            heading_ids[cell] = id
+            
     
     for in_element, out_element in element_map.iteritems():
         cell = table.getCellByElement(in_element)
@@ -132,6 +140,7 @@ def annotateTable(table_tree, table, heading_parser, table_id):
                 heading_list.append(heading_data)
                 #Add a class to the cell to match the heading
                 addClass(out_element, heading_classnames[heading]+"_ref")
+                addStringListAttr("headers", out_element, heading_ids[heading])
             out_element.insert(0, container)
             container.tail = out_element.text
             out_element.text=""

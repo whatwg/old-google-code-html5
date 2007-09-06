@@ -76,10 +76,10 @@ class HeadingMatcher(html4.HeadingMatcher):
     def isHeading(self, table, cell):
         """HTML 4 defines cells with the axis attribute set to be headings"""
         heading = cell.isHeading 
-        if (self.useTdBHeadings and not cell.element.text
+        if (self.useTdBHeadings and not cell.element.text.strip()
             and cell.element.getchildren() and cell.element[0].tag == "b"):
             heading = True
-        if (self.useTdStrongHeadings and not cell.element.text and
+        if (self.useTdStrongHeadings and not cell.element.text.strip() and
             cell.element.getchildren() and cell.element[0].tag == "strong"):
             heading = True
         return heading

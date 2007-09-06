@@ -146,7 +146,7 @@ function add_display_options() {
     var checkbox = document.createElement("input");
     checkbox.setAttribute("type", "checkbox");
     checkbox.setAttribute("id", "display_all_headings");
-    checkbox.setAttribute("checked", "checked");
+    //checkbox.setAttribute("checked", "checked");
     checkbox.addEventListener("change", function(event){toggle_view_all_headings();}, 
                               false);
     label.appendChild(checkbox);
