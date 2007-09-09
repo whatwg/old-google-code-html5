@@ -62,14 +62,15 @@ def GenshiAdapter(treewalker, tree):
         yield TEXT, text, (None, -1, -1)
 
 def parseDocument(document):
-    charset = document.info().getparam("charset")
+    if hasattr(document, "info"):
+        charset = document.info().getparam("charset")
+    else:
+        charset="utf-8"
     parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder("etree", lxml.etree))
     tree = parser.parse(document, encoding=charset)
     return tree
 
-def extractTables(url):
-    data = urllib2.urlopen(url)
-    
+def extractTables(data):
     tree = parseDocument(data)
     return tree.xpath("//table")
 
@@ -111,16 +112,7 @@ def annotateTable(table_tree, table, heading_parser, table_id):
     #Add classnames to all headings
     heading_classnames = {}
     heading_ids = {}
-    for i, (in_element, out_element) in enumerate(element_map.iteritems()):
-        cell = table.getCellByElement(in_element)
-        if cell is not None and heading_parser.isHeading(table, cell):
-            class_name = "__tableparser_heading_classname_%s_%i"%(table_id, i)
-            id = "__tableparser_heading_id_%s_%i"%(table_id, i)
-            addClass(out_element, class_name)
-            out_element.attrib['id'] = id
-            heading_classnames[cell] = class_name
-            heading_ids[cell] = id
-            
+    heading_counter = itertools.count()
     
     for in_element, out_element in element_map.iteritems():
         cell = table.getCellByElement(in_element)
@@ -134,6 +126,17 @@ def annotateTable(table_tree, table, heading_parser, table_id):
             title.text = "Headings:"
             heading_list = lxml.etree.SubElement(container, "ul", attrib={"class":"__tableparser_heading_list"})
             for heading in headings:
+                #Check if the heading is one we have encountered before.
+                #If not, add a unique identifier for it
+                if heading not in heading_classnames:
+                    i= heading_counter.next()
+                    class_name = "__tableparser_heading_classname_%s_%i"%(table_id, i)
+                    id = "__tableparser_heading_id_%s_%i"%(table_id, i)
+                    heading_out_element = element_map[heading.element]
+                    addClass(heading_out_element, class_name)
+                    heading_out_element.attrib['id'] = id
+                    heading_classnames[heading] = class_name
+                    heading_ids[heading] = id
                 #For each heading, copy the subelements of the heading to the cell
                 heading_data = lxml.etree.Element("li", attrib={"class":"__tableparser_heading_listitem"})
                 copySubtree(heading.element, heading_data)
@@ -159,12 +162,18 @@ def main():
     print "content-type:text/html;charset=utf-8\n\n"
     form = cgi.FieldStorage()
     uri = True and form.getfirst("uri") or ""
-    if urlparse.urlsplit(uri)[0] not in ("http", "https"):
+    if not uri:
+        source = form.getfirst("source")
+    else:
+        try:
+            source = urllib2.urlopen(uri)
+        except urllib2.URLError:
+            error("CANT_LOAD", uri)
+
+    if not source and urlparse.urlsplit(uri)[0] not in ("http", "https"):
         error("INVALID_URI", uri)
-    try:
-        tables = extractTables(uri)
-    except urllib2.URLError:
-        error("CANT_LOAD", uri)
+    
+    tables = extractTables(source)
         
     try:
         use_algorithm = form.getfirst("algorithm")

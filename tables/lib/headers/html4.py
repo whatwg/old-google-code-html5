@@ -55,12 +55,13 @@ class HeadingMatcher(object):
                         "headers" in current_cell.element.attrib):
                         axis_headers += self.headersAttrHeaders(table, current_cell)
                         break
+                else:
                     #The search in a given direction stops when the edge of the
                     #table is reached or when a data cell is found after a
                     #header cell.
                     if last_cell in axis_headers:
                         break
-                last_cell == current_cell
+                last_cell = current_cell
         
         #Need to search over all rows and cols the cell covers
         
@@ -104,7 +105,8 @@ class HeadingMatcher(object):
     
     def isHeading(self, table, cell):
         """HTML 4 defines cells with the axis attribute set to be headings"""
-        return cell.isHeading or "axis" in cell.element.attrib
+        return (cell.isHeading or "axis" in cell.element.attrib
+                or "scope" in cell.element.attrib)
     
 
 def scopeAttributeHeaders(table):
