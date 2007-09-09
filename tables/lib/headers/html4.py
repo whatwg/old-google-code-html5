@@ -104,7 +104,7 @@ class HeadingMatcher(object):
         return headers
     
     def isHeading(self, table, cell):
-        """HTML 4 defines cells with the axis attribute set to be headings"""
+        """HTML 4 defines cells with the axis or scope attribute set to be headings"""
         return (cell.isHeading or "axis" in cell.element.attrib
                 or "scope" in cell.element.attrib)
     
