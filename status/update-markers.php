@@ -2,6 +2,7 @@
 header("Content-Type: text/html; charset=UTF-8");
 require_once "Email.php";
 require_once "encoding-functions.php";
+require_once "annotate-web-apps-config.php";
 
 /*
  * IMPORTANT: when testing for yourself, change the email address to your own
@@ -12,9 +13,12 @@ require_once "encoding-functions.php";
  * Twitter message: "Status Update: $rationale"
  * 
  * Finish writing the code to send appropriate emails
+ * - May want to log more information about the user in the request email
+ *   e.g. IP Address, User Agent.
  * - Confirmation requests probably to Hixie
  * - Confirmed status updates to commit-watches
  * Write the confirmation system to check in updates to the DB
+ * - Add a better UI to allow user to confirm individual changes
  */
 ?>
 <!DOCTYPE html>
@@ -31,7 +35,7 @@ foreach ($_REQUEST as $name => $value) {
 		$rationale = $value;
 	} elseif ($value == 'TBW' || $value == 'WIP' || $value == 'SCS' || $value == 'none') {
 		// Ignore any other values, including empty values.
-		$status[$name] = $value;
+		$status[addslashes($name)] = $value;
 	}
 }
 
@@ -39,6 +43,9 @@ foreach ($_REQUEST as $name => $value) {
 if ($email == '' || !Email::isValidEmail($email)
  || $rationale == '' || !isUTF8($rationale) || mb_strlen($rationale) > 125) {
 	getMissingInfo($email, $rationale, $status);
+} else if ($_SERVER['PATH_INFO'] == '/confirm') {
+	updateDB($email, $rationale, $status);
+	outputConfirmed();
 } else {
 	$body = getMailConfirmRequest($email, $rationale, $status);
 	$sig = "HTML5 Status Updates\nhttp://www.whatwg.org/html5";
@@ -74,7 +81,8 @@ function getMissingInfo($email, $rationale, $status) {
 function getMailConfirmRequest($email, $rationale, $status) {
 	$body  = "The following changes were requested by $email\n";
 	$body .= "Rationale: $rationale\n\n";
-	$url = 'http://status.whatwg.org/update-markers.php?email=' . urlencode($email)
+//	$url = 'http://status.whatwg.org/update-markers.php?email=' . urlencode($email)
+	$url = 'http://html5.lachy.id.au/status/update-markers/confirm?email=' . urlencode($email)
 	     . '&rationale=' . urlencode($rationale);
 
 	foreach ($status as $name => $value) {
@@ -95,10 +103,37 @@ function outputConfirmation($body, $sig) {
 <?php
 }
 
-function updateDB($email, $rationale, $status) {
+function outputConfirmed() {
 ?>
-	<title>Update Status</title>
-	<p>This feature has not been implemented yet.
+	<title>Status Update Confirmed</title>
+	<p>The changes have been confirmed,
 <?php
+}
+
+function updateDB($email, $rationale, $status) {
+	global $dbhost, $dbuser, $dbpass, $dbname;
+	mysql_connect($dbhost, $dbuser, $dbpass);
+	mysql_select_db($dbname);
+
+	$query = 'SELECT * FROM status;';
+	$statusTable = mysql_query($query);
+	$statusId = array();
+	while ($row = mysql_fetch_row($statusTable)) {
+		$statusId[$row[1]] = $row[0];
+	}
+
+	foreach ($status as $name => $value) {
+		if ($value == 'none') {
+			$query = "DELETE FROM `section` WHERE name = '$name';";
+		} else {
+			$query = "UPDATE section SET status = $statusId[$value] WHERE name = '$name'";
+			mysql_query($query);
+			if (mysql_affected_rows() == 0) {
+				$query = "INSERT INTO section (`id`,`name`,`status`) VALUES (NULL , '$name', '$statusId[$value]');";
+				mysql_query($query);
+			}
+		}
+		//echo "$query | " . mysql_affected_rows() . "\n";
+	}
 }
 ?>
