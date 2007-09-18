@@ -81,6 +81,11 @@ def copySubtree(in_root, out_root):
         if isinstance(element.tag, basestring):
             new_element = lxml.etree.SubElement(out_root, element.tag, attrib=element.attrib)
             copySubtree(element, new_element)
+        elif element.tag is lxml.etree.Comment:
+            new_element = lxml.etree.Comment(element.text)
+            new_element.tail = element.tail
+            out_root.append(new_element)
+
 
 def addStringListAttr(attr_name, element, value):
     """Add a class name to an element""";
