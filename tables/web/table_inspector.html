@@ -13,7 +13,8 @@
             "html4":["scope", "headers"],
             "html5":[],
             "experimental":["scope", "headers", "b_headings", "strong_headings"],
-            "smartcolspan":[]
+            "smartcolspan":["no_headings_if_spans_data_col"],
+            "smartrowspan":[]
         };
         
         function loadPage() {
@@ -75,6 +76,7 @@
     </head>
     <body onload="loadPage();">
         <h1>Table Inspector</h1>
+        <div>
         <form action="/cgi-bin/tables/table_inspector.py">
             <p>
             <label>
@@ -94,20 +96,29 @@
                     <legend>Association algorithm</legend>
                 <p>
                     <label>
-                        <input type="radio" id="al_html4", name="algorithm" value="html4" checked> HTML 4
+                        <input type="radio" id="al_html4", name="algorithm" value="html4" checked> HTML 4 
                     </label>
+                    <a href="#note_1">[1]</a>
                 <p>
                     <label>
-                        <input type="radio" id="al_html5", name="algorithm" value="html5"> HTML 5
+                        <input type="radio" id="al_html5", name="algorithm" value="html5"> HTML 5 (Sept. 2007) 
                     </label>
+                    <a href="#note_2">[2]</a>
                 <p>
                     <label>
-                        <input type="radio" id="al_experimental", name="algorithm" value="experimental"> Experimental
+                        <input type="radio" id="al_experimental", name="algorithm" value="experimental"> Experimental 
                     </label>
+                    <a href="#note_3">[3]</a>
                 <p>
                     <label>
-                        <input type="radio" id="al_smartcolspan", name="algorithm" value="smartcolspan"> Smart Colspan
+                        <input type="radio" id="al_smartcolspan", name="algorithm" value="smartcolspan"> Smart Colspan 
                     </label>
+                    <a href="#note_4">[4]</a>
+                <p>
+                    <label>
+                        <input type="radio" id="al_smartrowspan", name="algorithm" value="smartrowspan"> Smart Rowspan 
+                    </label>
+                    <a href="#note_4">[4]</a>
                 </fieldset>
             </div>
             <div>
@@ -125,17 +136,29 @@
                     </label>
                 <p>
                     <label>
-                        Interprert &lt;td>&lt;b> as heading:
+                        Interpret &lt;td>&lt;b> as heading:
                         <input type="checkbox" name="b_headings" checked value="1">
                     </label>
                 <p>
                     <label>
-                        Interprert &lt;td>&lt;strong> as heading:
+                        Interpret &lt;td>&lt;strong> as heading:
                         <input type="checkbox" name="strong_headings" checked value="1">
                     </label>
+                <p>
+                    <label>
+                        Cells that span a column with no heading have no headings:
+                        <input type="checkbox" name="no_headings_if_spans_data_col" checked value="1">
+                    </label>   
                 </fieldset>
             </div>
             <input type="submit" value="Inspect">
+            <div class="notes">
+                <p id="note_1">[1] The HTML 4 algorithm is not well defined and is interpreted in many different ways. Suggestions for alternative readings of the spec are better phrased as suggestions for new algorithms.
+                <p id="note_2">[2] The HTML 5 algorithm is clearly marked as unfinished in the spec.
+                <p id="note_3">[3] Based on my interpretation of the HTML 4 algorithm plus additional logic to ensure that rows/columns containing only headers do not propogate those headers to other cells in the row/column and to ensure that cells with @scope set are not matched against cells not in their scope by the implicit stage of the algorithm.
+                <p id="note_4">[4] See <a href="http://lists.w3.org/Archives/Public/public-html/2007Sep/0134.html">this public-html post</a> for details
+            </div>
         </form>
+        </div>
     </body>
 </html>

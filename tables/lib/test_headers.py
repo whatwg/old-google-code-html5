@@ -26,7 +26,7 @@ def compareHeaders(expected, actual):
             expected_headers_text.sort()
             assert expected_headers_text == actual_headers_text
         else:
-            
+            print cell.element.text, expected[cell.element.text]
             assert expected[cell.element.text] == []
 
 def runTest(test_data):
@@ -37,7 +37,7 @@ def runTest(test_data):
     
     for algorithm, options, expected in test_data["expect"]:
         actual = headers_algorithms[algorithm](**options).matchAll(table_data)
-        print actual
+        print algorithm, options
         compareHeaders(expected, actual)
     
     

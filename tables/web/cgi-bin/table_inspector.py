@@ -17,7 +17,7 @@ from genshi.core import START, END, TEXT, COMMENT, DOCTYPE
     
 import tableparser
 import headers
-from headers import html4, html5, experimental, smartcolspan
+from headers import html4, html5, experimental, smartcolspan, smartrowspan
 
 template_filename = "table_output.html"
 
@@ -200,7 +200,10 @@ def main():
                                                          use_td_strong_headings,
                                                          use_td_b_headings)
         elif use_algorithm == "smartcolspan":
-            heading_parser = smartcolspan.HeadingMatcher()
+            no_headings_if_spans_data_col = bool(form.getfirst("no_headings_if_spans_data_col") == "1")
+            heading_parser = smartcolspan.HeadingMatcher(no_headings_if_spans_data_col)
+        elif use_algorithm == "smartrowspan":
+            heading_parser = smartrowspan.HeadingMatcher()
         else:
             raise
     

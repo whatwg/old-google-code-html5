@@ -1,6 +1,6 @@
 class HeadingMatcher(object):
-    def __init__(self):
-        pass
+    def __init__(self, no_headings_if_spans_data_col = False):
+        self.no_headings_if_spans_data_col = no_headings_if_spans_data_col
 
     def matchAll(self, table):
         rv = {}
@@ -17,7 +17,9 @@ class HeadingMatcher(object):
     def associateHeaders(self, table):
         rv = {}
         #For each cell at the top of the table
+        cells_with_no_heading_col = []
         for current_heading in table.iterCells((0, 0), axis="row", dir=1):
+            #List of cells that span a column with no headings
             if self.isHeading(table, current_heading):
                 #For each col this cell covers
                 for x in range(current_heading.anchor[0], current_heading.anchor[0] + current_heading.colspan):
@@ -35,11 +37,29 @@ class HeadingMatcher(object):
                             column_headings.append(current_cell)
                         elif self.isHeading(table, current_cell):
                             for heading in column_headings[:]:
-                                if heading.colspan == current_cell.colspan:
+                                if heading.colspan == current_cell.colspan: 
                                     column_headings.remove(heading)
                             rv[current_cell].extend(column_headings[:])
                             column_headings.append(current_cell)
                         else:
                             td_found = True
                             rv[current_cell].extend(column_headings[:])
+            else:
+                #The top cell is not a heading cell. If scan down the column
+                #for all data cells before we reach a heading cell
+                
+                #Give this a more sensible name
+                top_cell = current_heading
+                
+                for x in range(top_cell.anchor[0], top_cell.anchor[0]+top_cell.colspan):
+                    for current_cell in table.iterCells((x, 0), axis="col", dir=1):
+                        if not self.isHeading(table, current_cell):
+                            cells_with_no_heading_col.append(current_cell)
+                        else:
+                            break
+        if self.no_headings_if_spans_data_col:
+            #Unassign headings from the cells
+            for cell in cells_with_no_heading_col:
+                rv[cell] = []
+                
         return rv
