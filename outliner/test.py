@@ -11,7 +11,7 @@ import glob
 def compareExpected(test):
     tree = headers.getOutlineTree(test["data"])
     received = headers.printOutline(tree)
-    print "Received\n%s\nExpected:\n%s"%(received, test["outline"])
+    print "Data\n%s\nReceived\n%s\nExpected:\n%s"%(test["data"], received, test["outline"])
     assert received == test["outline"]
 
 def testAll():

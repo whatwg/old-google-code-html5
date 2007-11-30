@@ -115,6 +115,7 @@ def getOutlineTree(html_file):
                                                                       lxml.etree, fullTree=False))
     t = p.parse(html_file)
     dtw = domtreewalker.DOMTreeWalker(t, outline_filter)
+    #tb = html5lib.treebuilders.getTreeBuilder("etree", lxml.etree)()
     outline_tree, node_map = copyTree(dtw)
     outline_tree = mutateTreeToOutline(outline_tree)
     return outline_tree
