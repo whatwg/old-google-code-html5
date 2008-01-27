@@ -18,7 +18,7 @@ class HeadingMatcher(object):
         rv = {}
         #For each cell at the top of the table
         cells_with_no_heading_col = []
-        for current_heading in table.iterCells((0, 0), axis="row", dir=1):
+        for current_heading in table.iterAxis((0, 0), axis="row", dir=1):
             #List of cells that span a column with no headings
             if self.isHeading(table, current_heading):
                 #For each col this cell covers
@@ -26,7 +26,7 @@ class HeadingMatcher(object):
                     column_headings = [current_heading]
                     #Have we found the first data cell
                     td_found = False
-                    for current_cell in table.iterCells(
+                    for current_cell in table.iterAxis(
                         (x, current_heading.rowspan),
                         axis="col", dir=1):
                         if current_cell not in rv:
@@ -52,7 +52,7 @@ class HeadingMatcher(object):
                 top_cell = current_heading
                 
                 for x in range(top_cell.anchor[0], top_cell.anchor[0]+top_cell.colspan):
-                    for current_cell in table.iterCells((x, 0), axis="col", dir=1):
+                    for current_cell in table.iterAxis((x, 0), axis="col", dir=1):
                         if not self.isHeading(table, current_cell):
                             cells_with_no_heading_col.append(current_cell)
                         else:

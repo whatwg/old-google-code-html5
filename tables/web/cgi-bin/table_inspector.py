@@ -17,7 +17,7 @@ from genshi.core import START, END, TEXT, COMMENT, DOCTYPE
     
 import tableparser
 import headers
-from headers import html4, html5, experimental, smartcolspan, smartrowspan
+from headers import html4, html5, experimental, smartcolspan, smartrowspan, smartheaders
 
 template_filename = "table_output.html"
 
@@ -66,8 +66,8 @@ def parseDocument(document):
         charset = document.info().getparam("charset")
     else:
         charset="utf-8"
-    parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder("etree", lxml.etree))
-    tree = parser.parse(document, encoding=charset)
+    parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder("lxml"))
+    tree = parser.parse(document, encoding=charset).getroot()
     return tree
 
 def extractTables(data):
@@ -179,7 +179,7 @@ def main():
         error("INVALID_URI", uri)
     
     tables = extractTables(source)
-        
+    
     try:
         use_algorithm = form.getfirst("algorithm")
         use_scope = bool(form.getfirst("scope") == "1")
@@ -204,6 +204,8 @@ def main():
             heading_parser = smartcolspan.HeadingMatcher(no_headings_if_spans_data_col)
         elif use_algorithm == "smartrowspan":
             heading_parser = smartrowspan.HeadingMatcher()
+        elif use_algorithm == "smartheaders":
+            heading_parser = smartheaders.HeadingMatcher()
         else:
             raise
     

@@ -362,7 +362,15 @@ class Table(object):
             for y in range(y_max):
                 yield self[x,y]
     
-    def iterCells(self, starting_slot, axis="row", dir=1):
+    def iterCells(self):
+        emitted_cells = set()
+        for slot in self:
+            for cell in slot:
+                if cell not in emitted_cells:
+                    emitted_cells.add(cell)
+                    yield cell
+    
+    def iterAxis(self, starting_slot, axis="row", dir=1):
         """Iterate over all the cells (not slots) along one row or column in
         the table"""
         x,y = starting_slot
@@ -476,14 +484,14 @@ class Group(object):
         self.anchor = anchor
         self.span = span
     
-    def iterCells(self):
+    def __iter__(self):
         raise NotImplementedError
     
 class RowGroup(Group):
     def __init__(self, table, element, anchor, span):
         Group.__init__(self, table, element, anchor, span)
         assert self.anchor[0] == 0
-    def iterCells(self):
+    def __iter__(self):
         """Return each unique cell in the row group"""
         emitted_elements = []
         for y in range(self.anchor[1], self.anchor[1]+self.span):
@@ -499,7 +507,7 @@ class ColGroup(Group):
         Group.__init__(self, table, element, anchor, span)
         assert self.anchor[1] == 0
     
-    def iterCells(self):
+    def __iter__(self):
         """Return each unique cell in the column group"""
         emitted_elements = []
         for x in range(self.anchor[0], self.anchor[0]+self.span):

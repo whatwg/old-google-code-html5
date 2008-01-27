@@ -5,7 +5,7 @@ class HeadingMatcher(smartcolspan.HeadingMatcher):
     def associateHeaders(self, table):
         rv = {}
         #For each cell at the top of the table
-        for current_heading in table.iterCells((0, 0), axis="col", dir=1):
+        for current_heading in table.iterAxis((0, 0), axis="col", dir=1):
             if self.isHeading(table, current_heading):
                 #For each col this cell covers
                 for x in range(current_heading.anchor[0]+current_heading.rowspan, current_heading.anchor[0]):

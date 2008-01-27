@@ -1,113 +1,18 @@
-{"tests": [
-
-{"description":"Single cell",
-"data":"<table><td>1</td></table>",
-"slots":[
-        [["1"]]
-        ],
-"caption":null,
-"colgroups":[],
-"rowgroups":[{"tag":"tbody", "height":1, "slot":[1,1]}]
-},
-
-{"description":"Two cells, one row",
-"data":"<table><td>1</td><td>2</td></table>",
-"slots":[
-        [["1"], ["2"]]
-        ],
-"caption":null,
-"colgroups":[],
-"rowgroups":[{"tag":"tbody", "height":1, "slot":[1,1]}]
-},
-
-{"description":"Two cells, one column",
-"data":"<table><tr><td>1</td></tr><tr><td>2</td></tr></table>",
-"slots":[
-        [["1"]],
-        [["2"]]
-        ],
-"caption":null,
-"colgroups":[],
-"rowgroups":[{"tag":"tbody", "height":2, "slot":[1,1]}]
-},
-
-{"description":"Two rows, two columns",
-"data":"<table><tr><td>1</td><td>2</td></tr><tr><td>3</td><td>4</td></tr></table>",
-"slots":[
-        [["1"], ["2"]],
-        [["3"], ["4"]]
-        ],
-"caption":null,
-"colgroups":[],
-"rowgroups":[{"tag":"tbody", "height":2, "slot":[1,1]}]
-},
-
-{"description":"Two rows, two columns one cell with colspan=2",
-"data":"<table><tr><td colspan='2'>1</td></tr><tr><td>3</td><td>4</td></tr></table>",
-"slots":[
-        [["1"], ["1"]],
-        [["3"], ["4"]]
-        ],
-"caption":null,
-"colgroups":[],
-"rowgroups":[{"tag":"tbody", "height":2, "slot":[1,1]}]
-},
-
-
-{"description":"Two rows, two columns one cell with rowspan=2",
-"data":"<table><tr><td rowspan='2'>1</td><td>2</td></tr><tr><td>4</td></tr></table>",
-"slots":[
-        [["1"], ["2"]],
-        [["1"], ["4"]]
-        ],
-"caption":null,
-"colgroups":[],
-"rowgroups":[{"tag":"tbody", "height":2, "slot":[1,1]}]
-},
-
-{"description":"Two rows, two columns one cell with rowspan=2 colspan=2",
-"data":"<table><tr><td rowspan='2' colspan='2'>1</td></tr></table>",
-"slots":[
-        [["1"], ["1"]],
-        [["1"], ["1"]]
-        ],
-"caption":null,
-"colgroups":[],
-"rowgroups":[{"tag":"tbody", "height":2, "slot":[1,1]}]
-},
-
-
-{"description":"Single cell, caption",
-"data":"<table><caption>foo</caption><td>1</td></table>",
-"slots":[
-        [["1"]]
-        ],
-"caption":"foo",
-"colgroups":[],
-"rowgroups":[{"tag":"tbody", "height":1, "slot":[1,1]}]
-},
-
-{"description":"thead and tbody",
-"data":"<table><thead><td>1</td></thead><tbody><td>2</td></tbody></table>",
-"slots":[
-        [["1"]],
-        [["2"]]
-        ],
-"caption":null,
-"colgroups":[],
-"rowgroups":[{"tag":"thead", "height":1, "slot":[1,1]}, {"tag":"tbody", "height":1, "slot":[1,2]}]
-},
-
-{"description":"thead and tbody",
-"data":"<table><thead><td>1</td></thead><tbody><td>2</td></tbody></table>",
-"slots":[
-        [["1"]],
-        [["2"]]
-        ],
-"caption":null,
-"colgroups":[],
-"rowgroups":[{"tag":"thead", "height":1, "slot":[1,1]}, {"tag":"tbody", "height":1, "slot":[1,2]}]
-}
-
-]
+{"tests":[
+         {"data":"<table><tr><th>1</th><th>2</th></tr><tr><td>3</td><td>4</td></tr></table>",
+         "expect":[["html4", {}, {"1":[], "2":["1"], "3":["1"], "4":["2"]}],
+                   ["html5", {}, {"1":[], "2":[], "3":["1"], "4":["2"]}]
+                   ]
+         },
+        {"data":"<table><tr><th scope='col'>1</th><th scope='col'>2</th></tr><tr><td>3</td><td>4</td></tr></table>",
+         "expect":[["html4", {}, {"1":[], "2":[], "3":["1"], "4":["2"]}],
+                   ["html5", {}, {"1":[], "2":[], "3":["1"], "4":["2"]}]
+                   ]
+         },
+        {"data":"<table><tr><th colspan='2'>1</th><tr></tr><tr><td>2</td><td>3</td></tr></table>",
+         "expect":[["html4", {}, {"1":[], "2":["1"], "3":["1"]}],
+                   ["html5", {}, {"1":[], "2":["1"], "3":[]}]
+                   ]
+         }
+         ]
 }

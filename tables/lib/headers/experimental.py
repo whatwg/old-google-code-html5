@@ -35,7 +35,7 @@ class HeadingMatcher(html4.HeadingMatcher):
             
             if not axis_all_headings:
                 last_cell = None
-                for current_cell in table.iterCells((start_x, start_y),
+                for current_cell in table.iterAxis((start_x, start_y),
                                                     axis=axis, dir=-1):
                     if (self.isHeading(table, current_cell) and
                         current_cell not in axis_headers and
@@ -96,9 +96,9 @@ def scopeAttributeHeaders(table):
         scope = heading_element.attrib["scope"]
         x,y = heading_cell.anchor
         if scope == "row":
-            rv[heading_cell] = [item for item in table.iterCells((x+heading_cell.colspan, y), axis="row")]
+            rv[heading_cell] = [item for item in table.iterAxis((x+heading_cell.colspan, y), axis="row")]
         elif scope == "col":
-            rv[heading_cell] = [item for item in table.iterCells((x, y+heading_cell.rowspan), axis="col")]
+            rv[heading_cell] = [item for item in table.iterAxis((x, y+heading_cell.rowspan), axis="col")]
         elif scope == "rowgroup":
             cells = []
             for rowgroup in table.rowgroups:
