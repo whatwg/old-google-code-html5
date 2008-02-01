@@ -31,7 +31,8 @@ def parseNonNegativeInteger(input_str):
 
 class TableParser(object):
     def parse(self, table):
-        """Parse the table markup into a table structure"""
+        """Parse the table markup into a table structure, based on the HTML5
+        algorithm"""
         #We index from 0 not 1; changes to enable this are marked with comments starting #ZIDX
         
         #1. Let xmax be zero.
@@ -335,9 +336,10 @@ class TableParser(object):
 
 
 class Table(object):
+    """Representation of a full html table"""
     def __init__(self, element):
-        self.element = element
-        self.data = []
+        self.element = element #associated lxml element
+        self.data = [] #List of Cells occupying each slot in the table
         self.colgroups = []
         self.rowgroups = []
         self.columns = []
@@ -469,15 +471,19 @@ class Table(object):
         return self.elementToCell.get(element)
     
 class Cell(object):
+    """Cell type"""
     def __init__(self, element, anchor, rowspan, colspan):
         self.element = element
         self.anchor = anchor
         self.rowspan = rowspan
         self.colspan = colspan
     
-    isHeading = property(lambda self:self.element.tag == "th")
+    isHeading = property(lambda self:self.element.tag == "th", None, "Is the cell a <th> cell")
 
 class Group(object):
+    """Base class for row/column groups. These define a rectangle of cells
+    anchored on a particular slot with a particular span across one axis of the
+    table"""
     def __init__(self, table, element, anchor, span):
         self.table = table
         self.element = element
