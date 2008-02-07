@@ -14,6 +14,8 @@ def skipWhitespace(value, initialIndex):
     return index
 
 def parseNonNegativeInteger(input_str):
+    """Parse an input string (typically an attribute value) to return a
+    non-negative integer, using the rules from HTML5"""
     position = 0
     value = 0
     position = skipWhitespace(input_str, position)
@@ -33,6 +35,11 @@ class TableParser(object):
     def parse(self, table):
         """Parse the table markup into a table structure, based on the HTML5
         algorithm"""
+        
+        #This method is exceptionally long but it is a straightforward implementation
+        #of the HTML 5 specification so it's not clear there is a significant advantage
+        #in breaking it up into smaller methods
+        
         #We index from 0 not 1; changes to enable this are marked with comments starting #ZIDX
         
         #1. Let xmax be zero.
@@ -80,10 +87,10 @@ class TableParser(object):
             # appropriate one of the following two cases:
         
             #If the current element has any col element children 
-            if "col" in currentElement:
+            columns = currentElement.xpath("col")
+            if columns:
                 #9.1.1.1 Let xstart have the value xmax+1.
                 x_start = self.x_max + 1
-                columns = currentElement.xpath("col")
                 #9.1.1.2 Let the current column be the first col element child of the
                 #colgroup element.
                 for current_column in columns:
@@ -93,9 +100,9 @@ class TableParser(object):
                     #zero, then let span be that value. Otherwise, if the col element
                     #has no span attribute, or if trying to parse the attribute's value
                     #resulted in an error, then let span be 1.
-                    if "span" in currentElement.attrib:
+                    if "span" in current_column.attrib:
                         try:
-                            span = parseNonNegativeInteger(currentElement.attrib["span"])
+                            span = parseNonNegativeInteger(current_column.attrib["span"])
                         except ValueError:
                             span =  1
                     else:
@@ -105,22 +112,23 @@ class TableParser(object):
                     #9.1.1.5 Let the last span columns in the table correspond to the
                     #current column col element.
                     for col_num in range(span):
-                        self.the_table.columns.append(column)
+                        self.the_table.columns.append(current_column)
                         #9.1.1.6 If current column is not the last col element child
                         #of the colgroup element, then let the current column be
                         #the next col element child of the colgroup element, and
                         #return to the third step of this innermost group of steps
                         #(columns).
                 
-                    #9.1.1.7 Let all the last columns in the table  from x=xstart
-                    #to x=xmax  form a new column group, anchored at the slot
-                    #(xstart, 1), with width xmax-xstart-1, corresponding to the
-                    #colgroup element.
-                    
-                    #ZIDX coordinates are (x_start-1,0)
-                    self.the_table.colgroups.append(
-                        ColGroup(self.the_table,currentElement,(x_start-1,0),
-                                 self.x_max-x_start-1))
+                #9.1.1.7 Let all the last columns in the table  from x=xstart
+                #to x=xmax  form a new column group, anchored at the slot
+                #(xstart, 1), with width xmax-xstart-1, corresponding to the
+                #colgroup element.
+                
+                #ZIDX coordinates are (x_start-1,0)
+                #XXX width + 1 not width - 1
+                self.the_table.colgroups.append(
+                    ColGroup(self.the_table,currentElement,(x_start-1,0),
+                             self.x_max-x_start+1))
                 
             #If the current element has no col element children 
             else:
@@ -207,7 +215,6 @@ class TableParser(object):
                 self.endRowGroup()
                 #19. Return to step 12 (rows).
 
-                #XXX?
             currentElement = currentElement.getnext()
             if currentElement is None:
                 if self.the_table.unfilledSlots():

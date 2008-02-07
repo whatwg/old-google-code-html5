@@ -25,11 +25,15 @@ def compareSlots(expected, actual):
 def compareGroup(expected, actual):
     assert len(expected) == len(actual)
     for grp_actual, grp_expected in zip(actual, expected):
+        print "Slot: expected %s got %s"%(str(grp_expected["slot"]), str(grp_actual.anchor))
         assert tuple(grp_expected["slot"]) == grp_actual.anchor
+        print "Tag: expected %s got %s"%(str(grp_expected["tag"]), str(grp_actual.element.tag))
         assert grp_expected["tag"] == grp_actual.element.tag
         if "height" in grp_expected:
+            print "Height: expected %s got %s"%(str(grp_expected["height"]), str(grp_actual.span))
             assert grp_expected["height"] == grp_actual.span
         else:
+            print "Width: expected %s got %s"%(str(grp_expected["width"]), str(grp_actual.span))
             assert grp_expected["width"] == grp_actual.span
 
 def runtest(testdata):
