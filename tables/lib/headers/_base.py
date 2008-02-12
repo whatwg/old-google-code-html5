@@ -30,7 +30,7 @@ class HeadingMatcher(object):
             if headerElements:
                 match = headerElements[0]
             else:
-                return None
+                continue
             header = self.table.getCellByElement(match)
             if header is not None:
                 headers.append(header)
