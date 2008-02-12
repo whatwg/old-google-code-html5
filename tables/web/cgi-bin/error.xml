@@ -23,6 +23,9 @@
 		<p py:when="'MISSING_SOURCE'">
 		    You didn't supply any source to parse
 		</p>
+		<p py:when="'NO_TABLES'">
+		  The supplied document didn't contain any tables
+		</p>
                 <p py:otherwise="">An unexpected internal error occured. This is probably a bug in the script. If you can reproduce the problem, please <a href="mailto:jg307@cam.ac.uk">email me</a> stating the input that caused the problem.
                 </p>
 	    </div>
