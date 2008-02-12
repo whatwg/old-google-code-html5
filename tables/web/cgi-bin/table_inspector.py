@@ -271,13 +271,9 @@ class TableHeadersResponse(OK):
         algorithm = form.getfirst("algorithm")
         
         headings_module, algorithm_options = self.headers_algorithms[algorithm]
-        args = []
-        for arg in algorithm_options:
-            value = form.getfirst(arg)
-            if value is not None:
-                args.append(bool(value))
-            else:
-                raise InvalidInput("MISSING_ARGUMENT")
+        #This defaults all missing arguments to false, which is perhaps not
+        #quite right
+        args = [bool(form.getfirst(value)) for value in algorithm_options]
         sys.stderr.write(repr(args) + "\n")
         self.heading_matcher = headings_module.HeadingMatcher(*args)
         
