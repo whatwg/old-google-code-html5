@@ -33,6 +33,10 @@ class HeadingMatcher(_base.HeadingMatcher):
                     rv[cell] = self.scopeAttrHeaders(cell, scope_map)
                     if rv[cell] is not None:
                         continue
+                #Finally we try the implicit algorithm. This therefore gets applied to all 
+                #cells without any headers deriving from @scope or @headers. It's not
+                #clear if this is right or if this algorithm is only supposed to be 
+                #applied if there is no @scope or @headers in the whole table
                 rv[cell] = self.implicitHeaders(cell)
                 if cell not in rv:
                     rv[cell] = None
@@ -54,7 +58,7 @@ class HeadingMatcher(_base.HeadingMatcher):
                 if (self.isHeading(current_cell) and
                     current_cell not in axis_headers and
                     (not self.useScopeAttr or
-                     not "scope" in cell.element.attrib)):
+                     not "scope" in current_cell.element.attrib)):
                     
                     axis_headers.append(current_cell)
                     #If a header cell has the headers attribute set,

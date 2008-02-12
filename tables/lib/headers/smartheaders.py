@@ -180,10 +180,10 @@ class HeadingMatcher(_base.HeadingMatcher):
         rv = []
         idx, group_type = property_map[axis]
         for group in getattr(self.table, group_type):
-            if group.anchor[idx] <= cell.anchor[idx]:
-                if cell.anchor[idx] <= group.anchor[idx] + group.span - 1:    
+            if (cell.anchor[idx] >= group.anchor[idx]):
+                if cell.anchor[idx] < group.anchor[idx] + group.span:    
                     rv.append(group)
             else:
-                if group.anchor[idx] <= cell.anchor[idx] + getattr(cell, axis + "span"):
+                if group.anchor[idx] < cell.anchor[idx] + getattr(cell, axis + "span"):
                     rv.append(group)
         return rv
