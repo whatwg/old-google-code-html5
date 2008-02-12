@@ -166,7 +166,8 @@ class HeadingMatcher(_base.HeadingMatcher):
         
         rv = []
         for cell in group:
-            if cell.anchor[0] >= header.anchor[0] and cell.anchor[1] >= header.anchor[1]:
+            if (cell.anchor[0] >= header.anchor[0] and cell.anchor[1] >= header.anchor[1]
+                and cell != header):
                 rv.append(cell)
         return rv
     
