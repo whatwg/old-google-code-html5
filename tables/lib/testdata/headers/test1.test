@@ -73,6 +73,20 @@
          ["html4", {"useScopeAttr":false}, {"3":["1"]}],
          ["smartheaders", {}, {"3":[], "2":["1"]}]
          ]
+},
+
+{"input":"<table><colgroup span=2><th scope=colgroup>1<td>2<tr><td>3<td>4",
+"cases":[["html4", {}, {"3":["1"], "2":["1"], "4":["1"]}],
+         ["html4", {"useScopeAttr":false}, {"3":["1"], "2":["1"], "4":[]}],
+         ["html5", {}, {"3":["1"], "2":["1"], "4":["1"]}],
+         ["smartheaders", {}, {"3":["1"], "2":["1"], "4":["1"]}]
+         ]
+},
+
+{"input":"<table><tr><td><b>1<td>2<tr><td><strong>3<td>4",
+"cases":[["experimental", {"useTdBHeadings":true, "useTdStrongHeadings":true}, {"2":["1"], "4":["3"]}],
+         ["experimental", {"useTdBHeadings":false, "useTdStrongHeadings":false}, {"2":[], "4":[]}]
+         ]
 }
 
 ]
