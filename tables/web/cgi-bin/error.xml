@@ -14,13 +14,18 @@
                 <p py:when="'CANT_LOAD'">
                     The URI <a href="${uri}"><code>${uri}</code></a> could not be loaded. Ensure that the URI is correctly entered and the server is responding.
                 </p>
-                <p py:when="'INVALID_URI'">
-                    <code>"${uri}"</code> is not a recognised URI (only <code>http</code> and <code>https</code> URI schemes are supported).
-                    <py:if test="not uri">You may have left the URI box blank by mistake.</py:if>
+                <p py:when="'INVALID_SCHEME'">
+                    <code>"${uri}"</code> is not a recognised URI scheme (only <code>http</code> and <code>https</code> URI schemes are supported).
+		</p>
+		<p py:when="'MISSING_URI'">
+		    You didn't supply a URI to parse
                 </p>
+		<p py:when="'MISSING_SOURCE'">
+		    You didn't supply any source to parse
+		</p>
                 <p py:otherwise="">An unexpected internal error occured. This is probably a bug in the script. If you can reproduce the problem, please <a href="mailto:jg307@cam.ac.uk">email me</a> stating the input that caused the problem.
                 </p>
-            </div>
+	    </div>
         </section>
     </body>
 </html>

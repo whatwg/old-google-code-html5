@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 import sys
+import os
 import urlparse
 import urllib2
 import cgi
 import cgitb
 cgitb.enable()
 import itertools
+import httplib
 
 import html5lib
 from html5lib import treewalkers
@@ -19,12 +21,26 @@ import tableparser
 import headers
 from headers import html4, html5, experimental, smartcolspan, smartrowspan, smartheaders
 
-template_filename = "table_output.html"
-
 debug=True
 
-#From the html5lib test suite; need to put this somewhere sensible
+class InspectorException(Exception):
+    """Base class for our local exceptions"""
+    def __init__(self, type):
+        self.type = type
+
+class InputError(InspectorException):
+    pass
+
+class URIError(InspectorException):
+    pass
+
+class DocumentError(InspectorException):
+    pass
+
+#From the html5lib test suite
 def GenshiAdapter(treewalker, tree):
+    """Generator to convert html5lib treewalker tokens into Genshi
+    stream tokens"""
     text = None
     for token in treewalker(tree):
         token_type = token["type"]
@@ -61,7 +77,8 @@ def GenshiAdapter(treewalker, tree):
     if text is not None:
         yield TEXT, text, (None, -1, -1)
 
-def parseDocument(document):
+def parse(document):
+    """Parse a html string or file-like object into a lxml tree"""
     if hasattr(document, "info"):
         charset = document.info().getparam("charset")
     else:
@@ -70,11 +87,8 @@ def parseDocument(document):
     tree = parser.parse(document, encoding=charset).getroot()
     return tree
 
-def extractTables(data):
-    tree = parseDocument(data)
-    return tree.xpath("//table")
-
 def copySubtree(in_root, out_root):
+    """Copy all the desendants of in_node to out_node"""
     out_root.text = in_root.text
     out_root.tail = in_root.tail
     for element in in_root.iterchildren():
@@ -86,145 +100,220 @@ def copySubtree(in_root, out_root):
             new_element.tail = element.tail
             out_root.append(new_element)
 
-
-def addStringListAttr(attr_name, element, value):
-    """Add a class name to an element""";
-    if attr_name in element.attrib:
-        element.attrib[attr_name] += " " + value
-    else:
-        element.attrib[attr_name] = value
-
-def addClass(element, class_name):
-    return addStringListAttr("class", element, class_name)
-
-def annotateTable(table_tree, table, heading_parser, table_id):
-    """Take an input table element and return the table with each cell annotated
-    with its heading inforamtion"""
-    all_headings = heading_parser.matchAll(table)
-    out_tree = lxml.etree.Element("table")
-    copySubtree(table_tree, out_tree)
+class TableAnnotator(object):
+    """Class for taking an lxml <table> element, and annotating a copy with
+    information about the headings relating to each cell"""
+    def __init__(self, heading_matcher):
+        """heading_matcher - a headers.HeadingMatcher """
+        self.heading_matcher = heading_matcher
+        self.tw = treewalkers.getTreeWalker("etree", lxml.etree)
+        self.heading_counter = itertools.count()
     
-    #Make dict mapping input tree elements to output elements tuples
-    element_map = {}
-    for in_element, out_element in itertools.izip(table_tree.iterdescendants(),
-                                                  out_tree.iterdescendants()):
-        if in_element.tag in ("td","th"):
-            cell = table.getCellByElement(in_element)
+    def annotate(self, in_tree, id):
+        #Store some temporary state in the class
+        self.in_tree = in_tree
+        self.id = id
+        self.table = tableparser.TableParser().parse(in_tree)
+        self.headings_map = self.heading_matcher.matchAll(self.table)
+        self.heading_ids = {} #mapping of headings to id values
+        
+        self.out_tree = lxml.etree.Element("table")
+        #Copy the input tree into the output
+        copySubtree(in_tree, self.out_tree)
+        
+        self.element_map = self.make_input_output_map()
+        
+        for in_element, out_element in self.element_map.iteritems():
+            cell = self.table.getCellByElement(in_element)
             if not cell:
                 continue
-        element_map[in_element] = out_element
-    
-    #Add classnames to all headings
-    heading_classnames = {}
-    heading_ids = {}
-    heading_counter = itertools.count()
-    
-    for in_element, out_element in element_map.iteritems():
-        cell = table.getCellByElement(in_element)
-        if not cell:
-            continue
-        headings = all_headings[cell]
-        if headings:
-            container = lxml.etree.Element("div", attrib={"class":"__tableparser_heading_container"})
-            #Add a paragraph to the cell identifying the headings
-            title = lxml.etree.SubElement(container, "p", attrib={"class":"__tableparser_heading_title"})
-            title.text = "Headings:"
-            heading_list = lxml.etree.SubElement(container, "ul", attrib={"class":"__tableparser_heading_list"})
-            for heading in headings:
-                #Check if the heading is one we have encountered before.
-                #If not, add a unique identifier for it
-                if heading not in heading_classnames:
-                    i= heading_counter.next()
-                    class_name = "__tableparser_heading_classname_%s_%i"%(table_id, i)
-                    id = "__tableparser_heading_id_%s_%i"%(table_id, i)
-                    heading_out_element = element_map[heading.element]
-                    addClass(heading_out_element, class_name)
-                    heading_out_element.attrib['id'] = id
-                    heading_classnames[heading] = class_name
-                    heading_ids[heading] = id
-                #For each heading, copy the subelements of the heading to the cell
-                heading_data = lxml.etree.Element("li", attrib={"class":"__tableparser_heading_listitem"})
-                copySubtree(heading.element, heading_data)
-                heading_list.append(heading_data)
-                #Add a class to the cell to match the heading
-                addClass(out_element, heading_classnames[heading]+"_ref")
-                addStringListAttr("headers", out_element, heading_ids[heading])
-            out_element.insert(0, container)
-            container.tail = out_element.text
-            out_element.text=""
+            headings = self.headings_map[cell]
+            if headings:
+                self.annotate_cell(cell, headings, out_element)
         
-    return out_tree
+        return (self.table, GenshiAdapter(self.tw, self.out_tree))        
 
-def tableToStream(table_tree, heading_parser, table_id):
-    """Take a tree for a table and return a (table,stream) pair where
-    table is a tableparser.Table and stream is a genshi stream"""
-    table = tableparser.TableParser().parse(table_tree)
-    annotated_tree = annotateTable(table_tree, table, heading_parser, table_id)
-    tw = treewalkers.getTreeWalker("etree", lxml.etree)
-    return (table, GenshiAdapter(tw, annotated_tree))
+    def make_input_output_map(self):
+        """Create a dict mapping input tree elements to output tree elements"""
+        element_map = {}
+        for in_element, out_element in itertools.izip(self.in_tree.iterdescendants(),
+                                                      self.out_tree.iterdescendants()):
+            if in_element.tag in ("td","th"):
+                cell = self.table.getCellByElement(in_element)
+                if not cell:
+                    continue
+            element_map[in_element] = out_element
+        return element_map
+
+    def annotate_cell(self, cell, headings, out_element):
+        """Annotate cell with a list of all the headings it is associated with
+        and attributs to be used by script and AT to make the association"""
+        #Create a container element for the annotation
+        container = lxml.etree.Element("div", attrib={"class":"__tableparser_heading_container"})
+        #Add a paragraph to the cell identifying the headings
+        title = lxml.etree.SubElement(container, "p", attrib={"class":"__tableparser_heading_title"})
+        title.text = "Headings:"
+        #Now create a list of actual headings
+        heading_list = lxml.etree.SubElement(container, "ul", attrib={"class":"__tableparser_heading_list"})
+        for heading in headings:
+            #Check if the heading is one we have encountered before.
+            #If not, add a unique identifier for it to use in the highlighting script
+            if heading not in self.heading_ids:
+                self.annotate_heading(heading)
+            #For each heading, copy the list items to the cell
+            heading_data = lxml.etree.Element("li", attrib={"class":"__tableparser_heading_listitem"})
+            copySubtree(heading.element, heading_data)
+            heading_list.append(heading_data)
+
+            #Add a ref to the heading to the headers attribute for use in AT
+            self.add_string_list_attr("headers", out_element, self.heading_ids[heading])
+        out_element.insert(0, container)
+        container.tail = out_element.text
+        out_element.text=""
+    
+    def annotate_heading(self, heading):
+        """Add id abd classnames o headings so they can be referenced from cells"""
+        i= self.heading_counter.next()
+        id = "__tableparser_heading_id_%s_%i"%(self.id, i)
+        heading_out_element = self.element_map[heading.element]
+        heading_out_element.attrib['id'] = id
+        self.heading_ids[heading] = id
+    
+    def add_string_list_attr(self, attr_name, element, value):
+        """Add a class name to an element""";
+        if attr_name in element.attrib:
+            element.attrib[attr_name] += " " + value
+        else:
+            element.attrib[attr_name] = value
+
+    def add_class(self, element, class_name):
+        return self.add_string_list_attr("class", element, class_name)
+
+
+class Response(object):
+    status = None
+    
+    def __init__(self, environ):
+        self.headers = {}
+        self.environ = environ
+        self.body = self.create_body()
+    
+    def create_body(self, environ):
+        return ""
+    
+    def send(self):
+        print "Status: %i %s"%(self.status, httplib.responses[self.status])
+        for header, value in self.headers.iteritems():
+            print "%s: %s"%(header, value)
+        print "\r"
+        if self.environ["REQUEST_METHOD"] != "HEAD":
+            print self.body
+
+class OK(Response):
+    status = 200
+    def __init__(self, environ):
+        Response.__init__(self, environ)
+        self.headers["Content-type"] = "text/html; charset=utf-8"
+
+class MethodNotAllowed(Response):
+    status = 405
+    def __init__(self, environ):
+        Response.__init__(self, environ)
+        self.headers = {"Allow":"GET, POST, HEAD"}
+
+class InternalServerError(Response):
+    status = 500
+
+class Error(OK):
+    def create_body(self):
+        form = self.environ["cgi_storage"]
+        out_template = MarkupTemplate(open("error.xml"))
+        stream = out_template.generate(uri=(form.getfirst("uri") or ""), errorType=self.environ["error_type"])
+        return stream.render('html', doctype=("html", "", ""))
+
+class TableHeadersResponse(OK):
+    headers_algorithms = {"html4":(html4, ["scope", "headers"]),
+                          "html5":(html5, []),
+                          "experimental":(experimental, ["scope", "headers",
+                                                         "b_headings",
+                                                         "strong_headings"]),
+                          "smartcolspan":(smartcolspan,
+                                            ["no_headings_if_spans_data_col"]),
+                          "smartheaders":(smartheaders, [])}
+    template_filename = "table_output.html"
+
+    def create_body(self):
+        form = self.environ["cgi_storage"]
+        
+        input_type = form.getfirst("input_type")
+        if input_type == "type_uri":
+            uri = form.getfirst("uri") or ""
+            if not uri:
+                raise InputError("MISSING_URI")
+            else:
+                if urlparse.urlsplit(uri)[0] not in ("http", "https"):
+                    raise URIError("INVALID_SCHEME")
+                try:
+                    source = urllib2.urlopen(uri)
+                except urllib2.URLError:
+                    raise URIError("CANT_LOAD")
+        elif input_type == "type_source":
+            source = form.getfirst("source")
+            if not source:
+                raise InputError("MISSING_SOURCE")
+        else:
+            raise InputError("INVALID_INPUT")
+        
+        self.tables = parse(source).xpath("//table")
+        if not self.tables:
+            raise DocumentError("NO_TABLES")
+        
+        algorithm = form.getfirst("algorithm")
+        
+        headings_module, algorithm_options = self.headers_algorithms[algorithm]
+        args = []
+        for arg in algorithm_options:
+            value = form.getfirst(arg)
+            if value is not None:
+                args.append(bool(value))
+            else:
+                raise InvalidInput("MISSING_ARGUMENT")
+        sys.stderr.write(repr(args) + "\n")
+        self.heading_matcher = headings_module.HeadingMatcher(*args)
+        
+        data = self._get_data()
+        out_template = MarkupTemplate(open(self.template_filename))
+        stream = out_template.generate(data=data)
+        return stream.render('html', doctype=("html", "", ""))
+
+    def _get_data(self):
+        annotator = TableAnnotator(self.heading_matcher)
+        data = [annotator.annotate(table, str(i)) for i, table in enumerate(self.tables)]
+        return data
 
 def main():
-    print "content-type:text/html;charset=utf-8\n\n"
-    form = cgi.FieldStorage()
-    uri = True and form.getfirst("uri") or ""
-    if not uri:
-        source = form.getfirst("source")
-    else:
-        try:
-            source = urllib2.urlopen(uri)
-        except urllib2.URLError:
-            error("CANT_LOAD", uri)
+    environ = os.environ.copy()
+    environ["cgi_storage"] = cgi.FieldStorage()
 
-    if not source and urlparse.urlsplit(uri)[0] not in ("http", "https"):
-        error("INVALID_URI", uri)
-    
-    tables = extractTables(source)
+    #Check for the correct types of HTTP request
+    if environ["REQUEST_METHOD"] not in ("GET", "POST", "HEAD"):
+        response = MethodNotAllowed(environ)
+        response.send()
+        sys.exit(1)
     
     try:
-        use_algorithm = form.getfirst("algorithm")
-        use_scope = bool(form.getfirst("scope") == "1")
-        use_headers = bool(form.getfirst("headers") == "1")
-        
-        if use_algorithm == "html4":
-            use_scope = bool(form.getfirst("scope") == "1")
-            use_headers = bool(form.getfirst("headers") == "1")
-            heading_parser = html4.HeadingMatcher(use_scope, use_headers)
-        elif use_algorithm == "html5":
-            heading_parser = html5.HeadingMatcher()
-        elif use_algorithm == "experimental":
-            use_scope = bool(form.getfirst("scope") == "1")
-            use_headers = bool(form.getfirst("headers") == "1")
-            use_td_b_headings = bool(form.getfirst("b_headings") == "1")
-            use_td_strong_headings = bool(form.getfirst("strong_headings") == "1")
-            heading_parser = experimental.HeadingMatcher(use_scope, use_headers,
-                                                         use_td_strong_headings,
-                                                         use_td_b_headings)
-        elif use_algorithm == "smartcolspan":
-            no_headings_if_spans_data_col = bool(form.getfirst("no_headings_if_spans_data_col") == "1")
-            heading_parser = smartcolspan.HeadingMatcher(no_headings_if_spans_data_col)
-        elif use_algorithm == "smartrowspan":
-            heading_parser = smartrowspan.HeadingMatcher()
-        elif use_algorithm == "smartheaders":
-            heading_parser = smartheaders.HeadingMatcher()
+        response = TableHeadersResponse(environ)
+    except InspectorException, e:
+        if hasattr(e, "type"):
+            environ["error_type"] = e.type 
         else:
-            raise
-    
-        data = [tableToStream(table, heading_parser, str(i)) for i, table in enumerate(tables)]
-        out_template = MarkupTemplate(open(template_filename))
-        stream = out_template.generate(data=data)
-        print stream.render('html', doctype=("html", "", ""))
+            environ["error_type"] = "UNKNOWN_ERROR"
+        sys.stderr.write(repr(e.__dict__))
+        response = Error(environ)
     except:
-        if debug:
-            raise
-        else:
-            error("", uri)
-    
+        raise
+    response.send()
 
-def error(error_type, input_uri):
-    out_template = MarkupTemplate(open("error.xml"))
-    stream = out_template.generate(uri=input_uri, errorType=error_type)
-    print stream.render('html', doctype=("html", "", ""))
-    sys.exit(1)
 
 if __name__ == "__main__":
     main()
