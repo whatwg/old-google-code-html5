@@ -14,8 +14,7 @@ def skipWhitespace(value, initialIndex):
     return index
 
 def parseNonNegativeInteger(input_str):
-    """Parse an input string (typically an attribute value) to return a
-    non-negative integer, using the rules from HTML5"""
+    """HTML 5 algorithm for parsing a non-negative integer from an attribute"""
     position = 0
     value = 0
     position = skipWhitespace(input_str, position)
@@ -35,11 +34,6 @@ class TableParser(object):
     def parse(self, table):
         """Parse the table markup into a table structure, based on the HTML5
         algorithm"""
-        
-        #This method is exceptionally long but it is a straightforward implementation
-        #of the HTML 5 specification so it's not clear there is a significant advantage
-        #in breaking it up into smaller methods
-        
         #We index from 0 not 1; changes to enable this are marked with comments starting #ZIDX
         
         #1. Let xmax be zero.
@@ -87,10 +81,10 @@ class TableParser(object):
             # appropriate one of the following two cases:
         
             #If the current element has any col element children 
-            columns = currentElement.xpath("col")
-            if columns:
+            if "col" in currentElement:
                 #9.1.1.1 Let xstart have the value xmax+1.
                 x_start = self.x_max + 1
+                columns = currentElement.xpath("col")
                 #9.1.1.2 Let the current column be the first col element child of the
                 #colgroup element.
                 for current_column in columns:
@@ -100,9 +94,9 @@ class TableParser(object):
                     #zero, then let span be that value. Otherwise, if the col element
                     #has no span attribute, or if trying to parse the attribute's value
                     #resulted in an error, then let span be 1.
-                    if "span" in current_column.attrib:
+                    if "span" in currentElement.attrib:
                         try:
-                            span = parseNonNegativeInteger(current_column.attrib["span"])
+                            span = parseNonNegativeInteger(currentElement.attrib["span"])
                         except ValueError:
                             span =  1
                     else:
@@ -112,23 +106,22 @@ class TableParser(object):
                     #9.1.1.5 Let the last span columns in the table correspond to the
                     #current column col element.
                     for col_num in range(span):
-                        self.the_table.columns.append(current_column)
+                        self.the_table.columns.append(column)
                         #9.1.1.6 If current column is not the last col element child
                         #of the colgroup element, then let the current column be
                         #the next col element child of the colgroup element, and
                         #return to the third step of this innermost group of steps
                         #(columns).
                 
-                #9.1.1.7 Let all the last columns in the table  from x=xstart
-                #to x=xmax  form a new column group, anchored at the slot
-                #(xstart, 1), with width xmax-xstart-1, corresponding to the
-                #colgroup element.
-                
-                #ZIDX coordinates are (x_start-1,0)
-                #XXX width + 1 not width - 1
-                self.the_table.colgroups.append(
-                    ColGroup(self.the_table,currentElement,(x_start-1,0),
-                             self.x_max-x_start+1))
+                    #9.1.1.7 Let all the last columns in the table  from x=xstart
+                    #to x=xmax  form a new column group, anchored at the slot
+                    #(xstart, 1), with width xmax-xstart-1, corresponding to the
+                    #colgroup element.
+                    
+                    #ZIDX coordinates are (x_start-1,0)
+                    self.the_table.colgroups.append(
+                        ColGroup(self.the_table,currentElement,(x_start-1,0),
+                                 self.x_max-x_start-1))
                 
             #If the current element has no col element children 
             else:
@@ -215,6 +208,7 @@ class TableParser(object):
                 self.endRowGroup()
                 #19. Return to step 12 (rows).
 
+                #XXX?
             currentElement = currentElement.getnext()
             if currentElement is None:
                 if self.the_table.unfilledSlots():
@@ -347,12 +341,13 @@ class Table(object):
     def __init__(self, element):
         self.element = element #associated lxml element
         self.data = [] #List of Cells occupying each slot in the table
-        self.colgroups = []
+        self.colgroups = [] #List of colgroups in the table
         self.rowgroups = []
         self.columns = []
-        self.caption = None
-        self.model_errors = []
-        self.elementToCell = {}
+        self.caption = None #text of the table <caption>
+        self.model_errors = [] #List of table model errors
+        self.elementToCell = {} #Mapping between lxml elements and Cell objects
+                                #to use in getCellByElement
         
     def __getitem__(self, slot):
         return self.data[slot[1]][slot[0]]
@@ -365,13 +360,15 @@ class Table(object):
             return False
     
     def __iter__(self):
-        """Iterate over all the slots in a table in row order"""
+        """Iterate over all the slots in a table in row order, returning a list
+        of cells in each slot (overlapping cells may lead to > 1 cell per slot)"""
         x_max,y_max = self.x_max+1,self.y_max+1
         for x in range(x_max):
             for y in range(y_max):
                 yield self[x,y]
     
     def iterCells(self):
+        """Iterate over all cells in the table"""
         emitted_cells = set()
         for slot in self:
             for cell in slot:
@@ -428,6 +425,7 @@ class Table(object):
         return rv
     
     def expandTable(self, slot):
+        """Grow the storage to encompass the slot slot"""
          #Add any additional rows needed 
         if slot[1] > self.y_max:
             for i in range(slot[1]-self.y_max):
@@ -441,6 +439,7 @@ class Table(object):
         assert all([len(item) == len(self.data[0]) for item in self.data])
     
     def appendToSlot(self, slot, item):
+        """Add a Cell to a slot in the table"""
         if slot not in self:
             self.expandTable(slot)
         assert slot in self
@@ -467,9 +466,11 @@ class Table(object):
     headings = property(getHeadings)
     
     def row(self, index):
+        """All the slots in a row"""
         return self.data[index-1]
     
     def col(self, index):
+        """All the slots on a column"""
         return [row[index-1] for row in self.data[:]]
     
     def getCellByElement(self, element):
@@ -494,8 +495,8 @@ class Group(object):
     def __init__(self, table, element, anchor, span):
         self.table = table
         self.element = element
-        self.anchor = anchor
-        self.span = span
+        self.anchor = anchor #Slot in the table to which the cell is anchored
+        self.span = span #colspan or rowspan
     
     def __iter__(self):
         raise NotImplementedError

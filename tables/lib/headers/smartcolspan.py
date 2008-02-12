@@ -1,4 +1,12 @@
-class HeadingMatcher(object):
+import _base
+
+class HeadingMatcher(_base.HeadingMatcher):
+    """Get a cell -> headers mapping using the method proposed by
+    Ben Millard and Simon Pieters where headers are limited in scope to the
+    next header down the column with the same colspan
+    
+    note - this algorithm has been superceeded by that in smartheaders.py"""
+
     def __init__(self, no_headings_if_spans_data_col = False):
         self.no_headings_if_spans_data_col = no_headings_if_spans_data_col
 
@@ -11,7 +19,7 @@ class HeadingMatcher(object):
         return rv
 
     def isHeading(self, table, cell):
-        """HTML 4 defines cells with the axis attribute set to be headings"""
+        """Assume only <td> cells are headings"""
         return cell.isHeading
     
     def associateHeaders(self, table):

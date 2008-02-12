@@ -1,14 +1,23 @@
+import _base
 
-class HeadingMatcher(object):
+class HeadingMatcher(_base.HeadingMatcher):
+    """Cell -> headinglist matcher based on the HTML 4 specification
+
+    Note that this specification is rather vauge, so there is some
+    disagreement about the expected behaviour"""
     def __init__(self, useScopeAttr=True, useHeadersAttr=True):
         self.useScopeAttr = useScopeAttr
         self.useHeadersAttr = useHeadersAttr
     
     def matchAll(self, table):
-        """Return a dict mapping each cell to a heading cell"""
+
         rv = {}
+        self.table = table
+        #Build a map of headers with @scope -> cells they apply to
         if self.useScopeAttr:
-            scope_map = scopeAttributeHeaders(table)
+            scope_map = self.getScopeMap()
+        #For each cell in the table, try to attach headers using @headers,
+        #@scope and the implicit algorithm, in that order
         for slot in table:
             for cell in slot:
                 #If the cell has a rowspan or colspan > 1 it will be
@@ -17,19 +26,20 @@ class HeadingMatcher(object):
                 if cell in rv:
                     continue
                 if self.useHeadersAttr:
-                    rv[cell] = self.headersAttrHeaders(table, cell)
+                    rv[cell] = self.headersAttrHeaders(cell)
                     if rv[cell] is not None:
                         continue
                 if self.useScopeAttr:
-                    rv[cell] = self.scopeAttrHeaders(table, cell, scope_map)
+                    rv[cell] = self.scopeAttrHeaders(cell, scope_map)
                     if rv[cell] is not None:
                         continue
-                rv[cell] = self.implicitHeaders(table, cell)
+                rv[cell] = self.implicitHeaders(cell)
                 if cell not in rv:
                     rv[cell] = None
         return rv
     
-    def implicitHeaders(self, table, cell):
+    def implicitHeaders(self, cell):
+        """Get headers using the implicit headers algorithm"""
         row_headers = []
         col_headers = []
         
@@ -39,9 +49,9 @@ class HeadingMatcher(object):
         
         def checkAxis(axis, axis_headers, start_x, start_y):
             last_cell = None
-            for current_cell in table.iterCells((start_x, start_y),
-                                                axis=axis, dir=-1):
-                if (self.isHeading(table, current_cell) and
+            for current_cell in self.table.iterAxis((start_x, start_y),
+                                                    axis=axis, dir=-1):
+                if (self.isHeading(current_cell) and
                     current_cell not in axis_headers and
                     (not self.useScopeAttr or
                      not "scope" in cell.element.attrib)):
@@ -53,7 +63,7 @@ class HeadingMatcher(object):
                     #current direction.
                     if (self.useHeadersAttr and
                         "headers" in current_cell.element.attrib):
-                        axis_headers += self.headersAttrHeaders(table, current_cell)
+                        axis_headers += self.headersAttrHeaders(current_cell)
                         break
                 else:
                     #The search in a given direction stops when the edge of the
@@ -78,23 +88,9 @@ class HeadingMatcher(object):
         
         return headers
     
-    def headersAttrHeaders(self, table, cell):
-        headers = []
-        if not "headers" in cell.element.attrib:
-            return None
-        attr = cell.element.attrib["headers"]
-        #The value of this attribute is a space-separated list of cell names
-        for id in attr.split(" "):
-            headerElements = table.element.xpath("//*[@id='%s']"%id)
-            for item in headerElements:
-                cell = table.getCellByElement(item)
-                if cell is not None:
-                    headers.append(cell)
-        return headers
-    
-    def scopeAttrHeaders(self, table, cell, scopeMap=None):
+    def scopeAttrHeaders(self, cell, scopeMap=None):
         if scopeMap is None:
-            scopeMap = scopeAttrHeaders(table)
+            scopeMap = self.getScopeMap(self.table)
         headers = []
         for header, cells in scopeMap.iteritems():
             if cell in cells:
@@ -103,36 +99,50 @@ class HeadingMatcher(object):
             headers = None
         return headers
     
-    def isHeading(self, table, cell):
-        """HTML 4 defines cells with the axis or scope attribute set to be headings"""
+    def isHeading(self, cell):
+        """Return a boolean indicating whether the element is a heading
+        
+        HTML 4 defines cells with the axis or scope attribute set to be headings"""
         return (cell.isHeading or "axis" in cell.element.attrib
                 or "scope" in cell.element.attrib)
+        
     
-
-def scopeAttributeHeaders(table):
-    """Return a dict matching a heading to a list of cells to which it is
-    assosiated"""
-    rv = {}
-    for heading_cell in table.headings:
-        heading_element = heading_cell.element
-        if not "scope" in heading_element.attrib:
-            continue
-        scope = heading_element.attrib["scope"]
-        x,y = heading_cell.anchor
-        if scope == "row":
-            rv[heading_cell] = [item for item in table.iterCells((x+heading_cell.colspan, y), axis="row")]
-        elif scope == "col":
-            rv[heading_cell] = [item for item in table.iterCells((x, y+heading_cell.rowspan), axis="col")]
-        elif scope == "rowgroup":
-            cells = []
-            for rowgroup in table.rowgroups:
-                if heading_cell in rowgroup.iterCells():
-                    cells += [item for item in rowgroup.iterCells() if item != heading_cell]
-            rv[heading_cell] = cells
-        elif scope == "colgroup":
-            cells = []
-            for colgroup in table.colgroups:
-                if heading_cell in colgroup.iterCells():
-                    cells += [item for item in colgroup.iterCells() if item != heading_cell]
-            rv[heading_cell] = cells
-    return rv
+    def getScopeMap(self):
+        """Return a dict matching a heading to a list of cells to which it is
+        assosiated from the scope attribute"""
+        rv = {}
+        for heading_cell in self.table.headings:
+            heading_element = heading_cell.element
+            if not "scope" in heading_element.attrib:
+                continue
+            scope = heading_element.attrib["scope"]
+            x,y = heading_cell.anchor
+            if scope == "row":
+                for s in range(heading_cell.rowspan):
+                    rv[heading_cell] = [item for item in
+                                        self.table.iterAxis((x+heading_cell.colspan, y+s), axis="row")]
+            elif scope == "col":
+                for s in range(heading_cell.colspan):
+                    rv[heading_cell] = [item for item in
+                                        self.table.iterAxis((x+s, y+heading_cell.rowspan), axis="col")]
+            elif scope == "rowgroup":
+                cells = []
+                for rowgroup in self.table.rowgroups:
+                    if y >= rowgroup.anchor[1] and y <= rowgroup.anchor[1] + rowgroup.span:
+                        #This applies the heading to all other cells in the group
+                        #below and to the right of the current heading
+                        #This is hard to justify from the spec because it's
+                        #not especially clear on this point
+                        cells += [item for item in rowgroup if item != heading_cell and
+                                  item.anchor[0] >= heading_cell.anchor[0] and
+                                  item.anchor[1] >= heading_cell.anchor[1]]
+                rv[heading_cell] = cells
+            elif scope == "colgroup":
+                cells = []
+                for colgroup in self.table.colgroups:
+                    if x >= colgroup.anchor[0] and x <= colgroup.anchor[0] + colgroup.span:
+                        cells += [item for item in colgroup if item != heading_cell and
+                                  item.anchor[0] >= heading_cell.anchor[0] and
+                                  item.anchor[1] >= heading_cell.anchor[1]]
+                rv[heading_cell] = cells
+        return rv

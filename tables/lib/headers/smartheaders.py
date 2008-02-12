@@ -1,8 +1,15 @@
-import cgi
-class HeadingMatcher(object):
+import _base
+
+class HeadingMatcher(_base.HeadingMatcher):
+    """Smart span algorithm, based on an idea by Simon Pieters and Ben Millard
+
+    Essentially, headings only apply as far down/across the table as
+    there are no other headers with the same colspan/rowspan. This
+    version also has support for the headers attribute and for the
+    scope attribute"""
+
     def matchAll(self, table):
-        """Return a dict mapping cells to their headers
-        
+        """
         The basic algorithm is:
            1. For each cell in the table:
               2. If the cell has a headers attribute which lists the id of one
@@ -34,7 +41,7 @@ class HeadingMatcher(object):
                     headers_dict[cell].append(k)
         
         for cell in table.iterCells():
-            headers_attr_headers = self.headersAttrHeaders(table, cell)
+            headers_attr_headers = self.headersAttrHeaders(cell)
             #If the cell has a headers attribute add those headers and no others
             if headers_attr_headers:
                 rv[cell] = headers_attr_headers
@@ -180,27 +187,3 @@ class HeadingMatcher(object):
                 if group.anchor[idx] <= cell.anchor[idx] + getattr(cell, axis + "span"):
                     rv.append(group)
         return rv
-    
-    def headersAttrHeaders(self, cell):
-        
-        """Get all headers that apply to cell via a headers attribute
-        
-        The value of @headers is split on whitespace to give a series of tokens
-        Each token is used as an id for a getElementById rooted on the table
-        If no matching header is found, the token is skipped
-        Otherwise the matching heading is added to the list of headers
-        """
-        
-        #What to do if an item is missing or is not a header?
-        headers = []
-        if not "headers" in cell.element.attrib:
-            return None
-        attr = cell.element.attrib["headers"]
-        #The value of this attribute is a space-separated list of cell names
-        for id in attr.split(" "):
-            headerElements = table.element.xpath("//*[@id='%s']"%id)
-            match = headerElements[0]
-            header = self.table.getCellByElement(match)
-            if header is not None:
-                headers.append(header)
-        return headers

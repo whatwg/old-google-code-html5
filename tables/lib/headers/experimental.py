@@ -8,7 +8,7 @@ class HeadingMatcher(html4.HeadingMatcher):
         self.useTdBHeadings = useTdBHeadings
         self.useTdStrongHeadings = useTdStrongHeadings
     
-    def implicitHeaders(self, table, cell):
+    def implicitHeaders(self, cell):
         row_headers = []
         col_headers = []
         
@@ -27,17 +27,17 @@ class HeadingMatcher(html4.HeadingMatcher):
                 assert axis == "col"
                 origin = (cell.anchor[0],1)
             
-            for current_cell in table.iterCells(origin,
-                                                 axis=axis, dir=1):
-                if not self.isHeading(table, current_cell):
+            for current_cell in self.table.iterAxis(origin,
+                                               axis=axis, dir=1):
+                if not self.isHeading(current_cell):
                     axis_all_headings = False
                     break
             
             if not axis_all_headings:
                 last_cell = None
-                for current_cell in table.iterAxis((start_x, start_y),
+                for current_cell in self.table.iterAxis((start_x, start_y),
                                                     axis=axis, dir=-1):
-                    if (self.isHeading(table, current_cell) and
+                    if (self.isHeading(current_cell) and
                         current_cell not in axis_headers and
                         (not self.useScopeAttr or
                         not "scope" in current_cell.element.attrib)):
@@ -48,7 +48,7 @@ class HeadingMatcher(html4.HeadingMatcher):
                         #current direction.
                         if (self.useHeadersAttr and
                             "headers" in current_cell.element.attrib):
-                            axis_headers += self.headersAttrHeaders(table, current_cell)
+                            axis_headers += self.headersAttrHeaders(current_cell)
                             break
                         #The search in a given direction stops when the edge of the
                         #table is reached or when a data cell is found after a
@@ -73,42 +73,14 @@ class HeadingMatcher(html4.HeadingMatcher):
         
         return headers
     
-    def isHeading(self, table, cell):
+    def isHeading(self, cell):
         """HTML 4 defines cells with the axis attribute set to be headings"""
         heading = cell.isHeading
         if ((not cell.element.text or not cell.element.text.strip())
             and len(cell.element)):
+            import sys
             if self.useTdBHeadings and cell.element[0].tag == "b":
                 heading = True
             if self.useTdStrongHeadings and cell.element[0].tag == "strong":
                 heading = True
         return heading
-    
-
-def scopeAttributeHeaders(table):
-    """Return a dict matching a heading to a list of cells to which it is
-    assosiated"""
-    rv = {}
-    for heading_cell in table.headings:
-        heading_element = heading_cell.element
-        if not "scope" in heading_element.attrib:
-            continue
-        scope = heading_element.attrib["scope"]
-        x,y = heading_cell.anchor
-        if scope == "row":
-            rv[heading_cell] = [item for item in table.iterAxis((x+heading_cell.colspan, y), axis="row")]
-        elif scope == "col":
-            rv[heading_cell] = [item for item in table.iterAxis((x, y+heading_cell.rowspan), axis="col")]
-        elif scope == "rowgroup":
-            cells = []
-            for rowgroup in table.rowgroups:
-                if heading_cell in rowgroup.iterCells():
-                    cells += [item for item in rowgroup.iterCells() if item != heading_cell]
-            rv[heading_cell] = cells
-        elif scope == "colgroup":
-            cells = []
-            for colgroup in table.colgroups:
-                if heading_cell in colgroup.iterCells():
-                    cells += [item for item in colgroup.iterCells() if item != heading_cell]
-            rv[heading_cell] = cells
-    return rv
