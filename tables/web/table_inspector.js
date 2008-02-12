@@ -1,145 +1,105 @@
-heading_class_prefix = "__tableparser_heading_classname";
-heading_ref_class_suffix = "_ref";
-heading_classes = [];
-current_displayed_element = null;
 
-function toggle_heading_information(element) {
+Highlighter = function() {
+  this.current_displayed_element = null;
+  this.heading_id_regexp = new RegExp("^__tableparser_heading_id_.*_\d*");
+
+  this.toggle_heading_information = function(element) {
     toggle_class(element, "__tableparser_active_cell");
-};
+  };
 
-function toggle_highlight_heading(element) {
+  this.toggle_highlight_heading = function(element) {
     toggle_class(element, "__tableparser_active_heading");
-};
+  };
 
-function is_heading_id_class(class_name) {
-    rv = (class_name.indexOf(heading_class_prefix) == 0 & class_name.indexOf(heading_ref_class_suffix) != class_name.length-heading_ref_class_suffix.length);
-    return rv;
-};
+  this.is_heading_id = function(id) {
+    //Check if a id matches the format for a heading id
+    return this.heading_id_regexp.test(id);
+  };
 
-function is_heading_ref_class(class_name) {
-    rv = (class_name.indexOf(heading_class_prefix) == 0 & class_name.indexOf(heading_ref_class_suffix) == class_name.length-heading_ref_class_suffix.length);
-    return rv;
-};
-
-function extract_heading_classes(elements) {
-    for (var i=0; i<elements.length; i++) {
-        var element = elements[i];
-        if (element.hasAttribute("classes")) {
-            var classes = element.getAttribute("class").split(" ");
-            var heading_classes = [];
-            for (var j=0; j<classes.length; j++) {
-                if (is_heading_id_class(classes[j])) {
-                    heading_classes.push(classes[j]);
-                };
-            };
-        };
-    };
-    return heading_classes;
-};
-
-function heading_ref_classes(element) {
-    if (element.hasAttribute("class")) {
-        var classes = element.getAttribute("class").split(" ");
-        var heading_classes = [];
-        for (var j=0; j<classes.length; j++) {
-                if (is_heading_ref_class(classes[j])) {
-                    heading_classes.push(classes[j]);
-                };
-        };
-    } else {
-        var heading_classes = [];
-    };
-    return heading_classes;
-};
-
-function ref_class_to_id_class(class_name) {
-    return class_name.substr(0, class_name.length - heading_ref_class_suffix.length);
-};
-
-function get_heading_classes() {
-    var heading_elements = document.getElementsByTagName("th");
-    var data_elements = document.getElementsByTagName("td");
-    return extract_heading_classes(heading_elements) + extract_heading_classes(data_elements);    
-};
-
-function cell_identify_headings(element) {
-    var headings = heading_ref_classes(element);
-    var heading_elements = []
-    for (var i=0; i<headings.length; i++) {
-        var heading_class = ref_class_to_id_class(headings[i]);
-        heading_elements.push(getElementsByClassName(heading_class)[0]);
+  this.heading_ref_ids = function(element) {
+    /*Get a list of heading ids on an element*/
+    var heading_ids = [];
+    if (element.hasAttribute("headers")) {
+      var ids = element.getAttribute("headers").split(" ");
+      for (var j=0; j<ids.length; j++) {
+	//XXX -Not clear this test is actually useful
+	if (this.is_heading_id(ids[j])) {
+	  heading_ids.push(ids[j]);
+	};
       };
+    } else {
+      var heading_ids = [];
+    };
+    return heading_ids;
+  };
+
+  this.cell_identify_headings = function(element) {
+    /*Get an array of heading elements corresponding to a particular cell*/
+    var headings = this.heading_ref_ids(element);
+    var heading_elements = [];
+    for (var i=0; i<headings.length; i++) {
+      var heading = document.getElementById(headings[i]);
+      if (heading != null) {
+	heading_elements.push(heading);
+      } else {
+	//Otherwise we have an error somewhere
+	//Alert here is not very user friendly
+	alert("Missing id " + headings[i] + "- this is a bug");
+      }
+    };
     return heading_elements;
-};
+  };
+
+  this.cell_click = function(event) {
+    /*Callback when a cell is clicked on*/
+    var new_element = event.currentTarget;
+    var elements = [this.current_displayed_element, new_element];
+
+    for (var i=0; i<elements.length; i++) {
+      var element = elements[i];
+      if (element != null) {
+	this.toggle_heading_information(element);
+	var headings = this.cell_identify_headings(element);
+	for (var j=0; j<headings.length; j++) {
+	  this.toggle_highlight_heading(headings[j]);
+	};
+      };
+    };
+    
+    //Save a ref to the element currently being displayed
+    this.current_displayed_element = new_element;
+  };
+}
 
 function toggle_class(element, class_name) {
-
-    var element_class = "";
-    if (element.hasAttribute("class")) {
-        element_class = element.getAttribute("class");
+  //Add or remove a classname from an element
+  var element_class = "";
+  if (element.hasAttribute("class")) {
+    element_class = element.getAttribute("class");
+  };
+  
+  if (element_class.indexOf(class_name) != -1) {
+    var new_class = element_class.substr(0, element_class.indexOf(class_name));
+    new_class += element_class.substr(element_class.indexOf(class_name)+class_name.length);
+    element_class = new_class;
+  } else {
+    //Need to add the classname
+    if (element_class != "") {
+      element_class += " ";
     };
-
-    if (element_class.indexOf(class_name) != -1) {
-        var new_class = element_class.substr(0, element_class.indexOf(class_name));
-        new_class += element_class.substr(element_class.indexOf(class_name)+class_name.length);
-        element_class = new_class;
-    } else {
-        //Need to add the classname
-        if (element_class != "") {
-            element_class += " ";
-        };
-        element_class += class_name;
-    };
-    element.setAttribute("class", element_class);
-};
-
-function cell_click(event) {
-    var element = event.currentTarget;
-    if (current_displayed_element != null) {
-        toggle_heading_information(current_displayed_element);
-        var headings = cell_identify_headings(current_displayed_element);
-        for (var i=0; i<headings.length; i++) {
-            toggle_highlight_heading(headings[i]);
-        };
-    };
-    
-    //Now add style to the displayed headings
-    if (element != current_displayed_element) {
-        var headings = cell_identify_headings(element);
-        for (var i=0; i<headings.length; i++) {
-            var heading_element = headings[i];
-            toggle_highlight_heading(heading_element);
-        };
-        toggle_heading_information(element);
-    };
-        
-    //Save a ref to the element currently being displayed
-    current_displayed_element = element;
-};
-
-function load_page() {
-    //Get a list of all heading classes
-    heading_classes = get_heading_classes();
-    
-    //Attach event listeners to all td and th elements
-    var heading_elements = document.getElementsByTagName("th");
-    var data_elements = document.getElementsByTagName("td");
-    for (var i=0; i<heading_elements.length; i++) {
-        heading_elements[i].addEventListener("click", cell_click, false);
-    };
-    for (var i=0; i<data_elements.length; i++) {
-        data_elements[i].addEventListener("click", cell_click, false);
-    };
-
-    add_display_options();
-    toggle_view_all_headings();
-
+    element_class += class_name;
+  };
+  element.setAttribute("class", element_class);
 };
 
 function add_display_options() {
+  /*Add a checkbox to display all headings or not when script is enabled*/
     var heading = document.createElement("h2");
     heading.appendChild(document.createTextNode("Display Options"));
-    
+
+    var help = document.createElement("p");
+    help.appendChild(document.createTextNode("To highlight the headers associated with a particular cell, click that cell."));
+
     var label = document.createElement("label");
     label.appendChild(document.createTextNode("Display all headings"));
     
@@ -160,6 +120,7 @@ function add_display_options() {
     form.appendChild(p);
     
     div.appendChild(heading);
+    div.appendChild(help);
     div.appendChild(form);
     
     var body = document.getElementsByTagName("body")[0];
@@ -169,26 +130,50 @@ function add_display_options() {
 };
 
 function toggle_view_all_headings() {
+    /*Toggle the display of all the headings at once vs only those
+      for the currently selected cell*/
     var view_headings = document.getElementById("display_all_headings").checked;
-    if (view_headings) {
+    if (document.selectedStyleSheetSet) {
+      //Use the alternate stylesheets if we have DOM access to them
+      if (view_headings) {
         document.selectedStyleSheetSet = 'Headings Visible';
-    } else {
+      } else {
         document.selectedStyleSheetSet = 'Headings Hidden';
+      };
+    } else {
+      //Use simple DOM methods
+      //Containers and titles should have the same length
+      var containers = getElementsByClassName("__tableparser_heading_container");
+      var titles = getElementsByClassName("__tableparser_heading_title");
+      
+      if (view_headings) {
+	for (var i=0; i < containers.length; i++) {
+	  containers[i].style.display = "block";
+	  titles[i].style.display = "block";
+	}
+      } else {
+	for (var i=0; i < containers.length; i++) {
+	  containers[i].style.display = "none";
+	  titles[i].style.display = "none";
+	};
+      };
     };
 };
+    
+function getElementsByClassName(searchClass, node) {
+  /*Javascript gEBCN that uses native function when avaliable
+    adapted from http://www.dustindiaz.com/getelementsbyclass/
+   */
 
-function getElementsByClassName(searchClass, node, tag) {
     if ( node == null )
         node = document;
-    if ( tag == null )
-        tag = '*';
 
     if (node.getElementsByClassName) {
         return node.getElementsByClassName(searchClass);
     };
 
     var classElements = new Array();
-    var els = node.getElementsByTagName(tag);
+    var els = node.getElementsByTagName('*');
     var elsLen = els.length;
     var pattern = new RegExp("(^|\\s)"+searchClass+"(\\s|$)");
     for (i = 0, j = 0; i < elsLen; i++) {
@@ -200,3 +185,26 @@ function getElementsByClassName(searchClass, node, tag) {
     return classElements;
 };
 
+function load_page() {
+
+  highlighter = new Highlighter();
+
+  //Callback close for click events
+  function click_callback(event) {
+    highlighter.cell_click(event);  
+  }
+
+  //Attach event listeners to all td and th elements
+  var heading_elements = document.getElementsByTagName("th");
+  var data_elements = document.getElementsByTagName("td");
+  for (var i=0; i<heading_elements.length; i++) {
+    heading_elements[i].addEventListener("click", click_callback, false);
+  };
+  for (var i=0; i<data_elements.length; i++) {
+    data_elements[i].addEventListener("click", click_callback, false);
+  };
+
+  add_display_options();
+  toggle_view_all_headings();
+
+};

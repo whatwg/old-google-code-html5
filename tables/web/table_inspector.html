@@ -14,7 +14,6 @@
             "html5":[],
             "experimental":["scope", "headers", "b_headings", "strong_headings"],
             "smartcolspan":["no_headings_if_spans_data_col"],
-            "smartrowspan":[],
             "smartheaders":[]
         };
         
@@ -79,19 +78,40 @@
         <h1>Table Inspector</h1>
         <div>
         <form action="/cgi-bin/tables/table_inspector.py">
-            <p>
-            <label>
-                Document to inspect:
-                <input type="url" name="uri">
-            </label>
-            <p>
-                or
+            <fieldset>
+                <legend>Input content</legend>
             <p>
                 <label>
-                    Source code to inspect
-                    <textarea name="source" rows="10" cols="80"></textarea>
+                    <input type="radio" name="input_type" checked value="type_uri" id="input_type_uri">Inspect a URI
                 </label>
             </p>
+            <div class="input_value">
+                <p>
+                    <label>
+                        Document URI to inspect:
+                        <input type="url" name="uri" onfocus="document.getElementById('input_type_uri').checked = true">
+                    </label>
+                </p>
+            </div>
+            <p>
+                or
+            </p>
+            <p>
+                <label>
+                    <input type="radio" name="input_type" value="type_source" id="input_type_source">Inspect source
+                </label>
+            </p>
+            <div class="input_value">
+                <p>
+                    <label for="input_source">
+                        Source code to inspect:
+                    </label>
+                </p>
+                <p>
+                    <textarea id="input_source" name="source" rows="10" cols="80" onfocus="document.getElementById('input_type_source').checked = true"></textarea>
+                </p>
+            </div>
+            </fieldset>
             <div>
                 <fieldset>
                     <legend>Association algorithm</legend>
@@ -113,11 +133,6 @@
                 <p>
                     <label>
                         <input type="radio" id="al_smartcolspan", name="algorithm" value="smartcolspan"> Smart Colspan 
-                    </label>
-                    <a href="#note_4">[4]</a>
-                <p>
-                    <label>
-                        <input type="radio" id="al_smartrowspan", name="algorithm" value="smartrowspan"> Smart Rowspan 
                     </label>
                     <a href="#note_4">[4]</a>
                 <p>
