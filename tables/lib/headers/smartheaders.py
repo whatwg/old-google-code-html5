@@ -65,7 +65,7 @@ class HeadingMatcher(_base.HeadingMatcher):
         
         scope = None
         if "scope" in header.element.attrib:
-            scope = header.element.attrib["scope"]
+            scope = header.element.attrib["scope"].lower()
         if scope is None or scope not in ("row", "col", "rowgroup", "colgroup"):
             scope = "auto"
         
