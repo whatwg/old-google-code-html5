@@ -1,0 +1,196 @@
+#data
+<!DOCTYPE html><body>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+
+#data
+<!DOCTYPE html><body>X
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|    "X"
+
+#data
+<!DOCTYPE html><body><!-- comment -->
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|    <!-- comment -->
+
+#data
+<!DOCTYPE html><body><!DOCTYPE html>
+#errors
+Line 1 Col 36 Unexpected DOCTYPE. Ignored.
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+
+#data
+<!DOCTYPE html><body><html>
+#errors
+Line 1 Col 27 html needs to be the first start tag.
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+
+#data
+<!DOCTYPE html><body><html foo>
+#errors
+Line 1 Col 27 html needs to be the first start tag.
+#document
+| <!DOCTYPE html>
+| <html>
+|   foo=""
+|   <head>
+|   <body>
+
+#data
+<!DOCTYPE html><html foo><body><html bar>
+#errors
+Line 1 Col 27 html needs to be the first start tag.
+#document
+| <!DOCTYPE html>
+| <html>
+|   foo=""
+|   bar=""
+|   <head>
+|   <body>
+
+#data
+<!DOCTYPE html><html foo="a"><body><html foo="b">
+#errors
+Line 1 Col 27 html needs to be the first start tag.
+#document
+| <!DOCTYPE html>
+| <html>
+|   foo="a"
+|   <head>
+|   <body>
+
+#data
+<!DOCTYPE html><body><base>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <base>
+
+#data
+<!DOCTYPE html><body><base>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <base>
+
+#data
+<!DOCTYPE html><body><link>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <link>
+
+#data
+<!DOCTYPE html><body><meta>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <meta>
+
+#data
+<!DOCTYPE html><body><script></script>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <script>
+
+#data
+<!DOCTYPE html><body><style></style>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <style>
+
+#data
+<!DOCTYPE html><body><title></title>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <title>
+
+#data
+<!DOCTYPE html><body><body>
+#errors
+Line 1 Col 27 Unexpected start tag (body).
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+
+#data
+<!DOCTYPE html><body><body foo>
+#errors
+Line 1 Col 27 Unexpected start tag (body).
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     foo=""
+
+#data
+<!DOCTYPE html><body foo><body bar>
+#errors
+Line 1 Col 27 Unexpected start tag (body).
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     foo=""
+|     bar=""
+
+#data
+<!DOCTYPE html><body foo="a"><body foo="b">
+#errors
+Line 1 Col 27 Unexpected start tag (body).
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     foo="a"
