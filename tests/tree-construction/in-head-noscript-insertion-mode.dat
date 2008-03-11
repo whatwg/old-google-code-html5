@@ -1,0 +1,20 @@
+#data
+<!DOCTYPE html><noscript></noscript>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|     <noscript>
+|   <body>
+
+#data
+<!DOCTYPE html><noscript><!DOCTYPE html></noscript>
+#errors
+Line 1 Col 40 Unexpected DOCTYPE. Ignored.
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|     <noscript>
+|   <body>
