@@ -9,12 +9,12 @@
 |   <body>
 
 #data
-<!DOCTYPE html><noscript><!DOCTYPE html></noscript>
+<!DOCTYPE html><noscript><!DOCTYPE html>foo&amp;bar</noscript>
 #errors
-Line 1 Col 40 Unexpected DOCTYPE. Ignored.
 #document
 | <!DOCTYPE html>
 | <html>
 |   <head>
 |     <noscript>
+|       "<!DOCTYPE html>foo&amp;bar"
 |   <body>
