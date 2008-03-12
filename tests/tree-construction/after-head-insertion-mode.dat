@@ -26,7 +26,6 @@ Line 1 Col 37 Unexpected DOCTYPE. Ignored.
 | <!DOCTYPE html>
 | <html>
 |   <head>
-|   " "
 |   <body>
 
 #data

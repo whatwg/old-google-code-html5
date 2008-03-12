@@ -128,12 +128,13 @@ Line 1 Col 33 Unexpected start tag head in existing head. Ignored.
 #data
 <!DOCTYPE html><head></p>
 #errors
-Line 1 Col 31 Unexpected end tag (p). Ignored.
+Line 1 Col 31 Unexpected end tag (p). Implying start tag.
 #document
 | <!DOCTYPE html>
 | <html>
 |   <head>
 |   <body>
+|     <p>
 
 #data
 <!DOCTYPE html><head></br>
@@ -163,6 +164,6 @@ Line 1 Col 32 Unexpected end tag (br). Treated as a br start tag.
 | <!DOCTYPE html>
 | <html>
 |   <head>
-      " "
+|     " "
 |   <body>
 |     "X"

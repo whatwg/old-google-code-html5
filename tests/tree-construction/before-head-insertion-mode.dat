@@ -77,12 +77,13 @@ Line 1 Col 27 html needs to be the first start tag.
 #data
 <!DOCTYPE html><html></p>
 #errors
-Line 1 Col 25 Unexpected end tag (p). Missing start tag. Ignored.
+Line 1 Col 25 Unexpected end tag (p). Implying start tag.
 #document
 | <!DOCTYPE html>
 | <html>
 |   <head>
 |   <body>
+|     <p>
 
 #data
 <!DOCTYPE html><html></br>
@@ -93,6 +94,7 @@ Line 1 Col 26 Unexpected end tag (br). Treated as a br start tag.
 | <html>
 |   <head>
 |   <body>
+|     <br>
 
 #data
 <!DOCTYPE html><html></foo>

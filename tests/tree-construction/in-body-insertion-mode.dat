@@ -15,7 +15,7 @@
 | <html>
 |   <head>
 |   <body>
-|    "X"
+|     "X"
 
 #data
 <!DOCTYPE html><body><!-- comment -->
@@ -25,7 +25,7 @@
 | <html>
 |   <head>
 |   <body>
-|    <!-- comment -->
+|     <!-- comment -->
 
 #data
 <!DOCTYPE html><body><!DOCTYPE html>
@@ -412,7 +412,7 @@ Line 1 Col 27 Unexpected start tag (body).
 
 #data
 <!DOCTYPE html><body><pre>
-foo
+foo</pre>
 #errors
 #document
 | <!DOCTYPE html>
@@ -423,7 +423,7 @@ foo
 |       "foo"
 
 #data
-<!DOCTYPE html><body><pre>foo
+<!DOCTYPE html><body><pre>foo</pre>
 #errors
 #document
 | <!DOCTYPE html>
@@ -435,7 +435,7 @@ foo
 
 #data
 <!DOCTYPE html><body><listing>
-foo
+foo</listing>
 #errors
 #document
 | <!DOCTYPE html>
@@ -446,7 +446,7 @@ foo
 |       "foo"
 
 #data
-<!DOCTYPE html><body><listing>foo
+<!DOCTYPE html><body><listing>foo</listing>
 #errors
 #document
 | <!DOCTYPE html>
@@ -614,7 +614,7 @@ Line 1 Col 47 Missing end tags (address, address).
 |     <li>
 
 #data
-<!DOCTYPE html><body><li><center><li>
+<!DOCTYPE html><body><li><center><li></center>
 #errors
 #document
 | <!DOCTYPE html>
@@ -1084,7 +1084,7 @@ ddne 1 Col 47 Missing end tags (address, address).
 |     <dt>
 
 #data
-<!DOCTYPE html><body><dd><center><dd>
+<!DOCTYPE html><body><dd><center><dd></center>
 #errors
 #document
 | <!DOCTYPE html>
@@ -1096,7 +1096,7 @@ ddne 1 Col 47 Missing end tags (address, address).
 |         <dd>
 
 #data
-<!DOCTYPE html><body><dt><center><dd>
+<!DOCTYPE html><body><dt><center><dd></center>
 #errors
 #document
 | <!DOCTYPE html>
@@ -1108,7 +1108,7 @@ ddne 1 Col 47 Missing end tags (address, address).
 |         <dd>
 
 #data
-<!DOCTYPE html><body><dd><center><dt>
+<!DOCTYPE html><body><dd><center><dt></center>
 #errors
 #document
 | <!DOCTYPE html>
@@ -1120,7 +1120,7 @@ ddne 1 Col 47 Missing end tags (address, address).
 |         <dt>
 
 #data
-<!DOCTYPE html><body><dt><center><dt>
+<!DOCTYPE html><body><dt><center><dt></center>
 #errors
 #document
 | <!DOCTYPE html>
@@ -1134,6 +1134,7 @@ ddne 1 Col 47 Missing end tags (address, address).
 #data
 <!DOCTYPE html><body><plaintext>foo<p>&amp;</plaintext><!-- comment -->
 #errors
+Line 1 Col 71 Unexpected EOF. Expected end tag (plaintext).
 #document
 | <!DOCTYPE html>
 | <html>
@@ -1145,6 +1146,7 @@ ddne 1 Col 47 Missing end tags (address, address).
 #data
 <!DOCTYPE html><body><p><plaintext>foo<p>&amp;</plaintext><!-- comment -->
 #errors
+Line 1 Col 74 Unexpected EOF. Expected end tag (plaintext).
 #document
 | <!DOCTYPE html>
 | <html>

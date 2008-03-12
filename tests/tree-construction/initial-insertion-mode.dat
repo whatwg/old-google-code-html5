@@ -11,7 +11,7 @@
 <!DOCTYPE hTmL>
 #errors
 #document
-| <!DOCTYPE html>
+| <!DOCTYPE hTmL>
 | <html>
 |   <head>
 |   <body>
@@ -41,7 +41,7 @@ Line 1 Col 28 Erroneous DOCTYPE.
 #errors
 Line 1 Col 34 Erroneous DOCTYPE.
 #document
-| <!DOCTYPE html>
+| <!DOCTYPE html PUBLIC "foo" "bar">
 | <html>
 |   <head>
 |   <body>
@@ -51,7 +51,7 @@ Line 1 Col 34 Erroneous DOCTYPE.
 #errors
 Line 1 Col 28 Erroneous DOCTYPE.
 #document
-| <!DOCTYPE html>
+| <!DOCTYPE html SYSTEM "foo">
 | <html>
 |   <head>
 |   <body>

@@ -102,13 +102,14 @@ Line 1 Col 31 html needs to be the first start tag.
 #data
 <!DOCTYPE html><noscript></p>
 #errors
-Line 1 Col 35 Unexpected end tag (p). Ignored.
+Line 1 Col 35 Unexpected end tag (p). Implying start tag.
 #document
 | <!DOCTYPE html>
 | <html>
 |   <head>
 |     <noscript>
 |   <body>
+|     <p>
 
 #data
 <!DOCTYPE html><noscript></br>
