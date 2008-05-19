@@ -17,6 +17,7 @@ original_body = doc.getElementsByTagName('body')[0]
 # Create an empty body, for the page content to be added into later
 default_body = doc.createElement('body')
 default_body.setAttribute('class', original_body.getAttribute('class'))
+default_body.setAttribute('onload', original_body.getAttribute('onload'))
 original_body.parentNode.replaceChild(default_body, original_body)
 doc.removeChild(doc.firstChild) # remove the doctype, else doc.cloneNode dies
 
@@ -26,10 +27,6 @@ head = original_body.getElementsByTagName('div')[0]
 # Make a stripped-down version of it
 short_head = head.cloneNode(True)
 short_head.childNodes = short_head.childNodes[:6]
-
-# Get the annotation script too
-script = original_body.getElementsByTagName('script')[-1]
-script.parentNode.removeChild(script)
 
 # Stuff for fixing up references:
 
@@ -67,7 +64,6 @@ while not (original_body.firstChild.nodeName == 'h2'
            and 'no-toc' not in original_body.firstChild.getAttribute('class').split(' ')):
 	extract_ids('index', original_body.firstChild)
 	page_body.appendChild(original_body.firstChild)
-page_body.appendChild(script.cloneNode(True))
 pages.append( ('index', page, 'Front cover') )
 
 
@@ -108,9 +104,6 @@ while original_body.firstChild:
 			)):
 		extract_ids(name, original_body.firstChild)
 		page_body.appendChild(original_body.firstChild)
-
-	# Add the annotation script
-	page_body.appendChild(script.cloneNode(True))
 
 	pages.append( (name, page, title) )
 
