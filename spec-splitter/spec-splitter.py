@@ -1,215 +1,218 @@
+try:
+    import psyco
+    psyco.full() # make html5lib faster
+except ImportError:
+    pass
+
 import sys
 import html5lib
+import html5lib.serializer
+import html5lib.treewalkers
+import re
+from lxml import etree # requires lxml 2.0
+from copy import deepcopy
 
-print "HTML5 Spec Splitter";
+print "HTML5 Spec Splitter"
 
-print "Parsing...";
+if len(sys.argv) != 3:
+    print 'Run like "python spec-splitter.py index multipage", where the directory "multipage" exists'
+    sys.exit()
 
-# parse document as HTML5
-parser = html5lib.html5parser.HTMLParser(tree=html5lib.treebuilders.dom.TreeBuilder)
+# The document is split on all <h2> elements, plus the following specific elements
+# (which were chosen to split any pages that were larger than about 100-200KB, and
+# may need to be adjusted as the spec changes):
+split_exceptions = [
+    'offline', 'history', 'structured',
+    'the-root', 'text-level', 'video', 'prose', 'embedded', 'the-canvas', 'tabular', 'interactive-elements',
+    'parsing', 'tokenisation', 'tree-construction', 'serializing', 'named',
+]
+
+
+print "Parsing..."
+
+# Parse document
+parser = html5lib.html5parser.HTMLParser(tree = html5lib.treebuilders.getTreeBuilder('lxml'))
 doc = parser.parse(open(sys.argv[1]), encoding='utf-8')
 
-print "Splitting...";
+print "Splitting..."
+
+# Absolutise some references, so the spec can be hosted elsewhere
+if False:
+    for a in ('href', 'src'):
+        for t in ('link', 'script', 'img'):
+            for e in doc.findall('//%s[@%s]' % (t, a)):
+                if e.get(a)[0] == '/':
+                    e.set(a, 'http://www.whatwg.org' + e.get(a))
+                else:
+                    e.set(a, 'http://www.whatwg.org/specs/web-apps/current-work/' + e.get(a))
 
 # Extract the body from the source document
-original_body = doc.getElementsByTagName('body')[0]
+original_body = doc.find('body')
 
 # Create an empty body, for the page content to be added into later
-default_body = doc.createElement('body')
-default_body.setAttribute('class', original_body.getAttribute('class'))
-default_body.setAttribute('onload', original_body.getAttribute('onload'))
-original_body.parentNode.replaceChild(default_body, original_body)
-doc.removeChild(doc.firstChild) # remove the doctype, else doc.cloneNode dies
+default_body = etree.Element('body')
+default_body.set('class', original_body.get('class'))
+default_body.set('onload', 'fixBrokenLink(); %s' % original_body.get('onload'))
+original_body.getparent().replace(original_body, default_body)
 
 # Extract the header, so we can reuse it in every page
-head = original_body.getElementsByTagName('div')[0]
+header = original_body.find('.//div[@class="head"]')
 
 # Make a stripped-down version of it
-short_head = head.cloneNode(True)
-short_head.childNodes = short_head.childNodes[:6]
+short_header = deepcopy(header)
+del short_header[3:]
+
+# Prepare the link-fixup script
+link_fixup_script = etree.XML('<script src="link-fixup.js"/>')
+doc.find('head')[-1].tail = '\n  '
+doc.find('head').append(link_fixup_script)
+link_fixup_script.tail = '\n  '
 
 # Stuff for fixing up references:
+
+def get_page_filename(name):
+    return '%s.html' % name
 
 # Finds all the ids and remembers which page they were on
 id_pages = {}
 def extract_ids(page, node):
-        if node.nodeType == node.ELEMENT_NODE and node.hasAttribute('id'):
-                id_pages[node.getAttribute('id')] = page
-        for n in node.childNodes:
-                extract_ids(page, n)
+    if node.get('id'):
+        id_pages[node.get('id')] = page
+    for e in node.findall('.//*[@id]'):
+        id_pages[e.get('id')] = page
 
 # Updates all the href="#id" to point to page#id
+missing_warnings = []
 def fix_refs(page, node):
-        if node.nodeType == node.ELEMENT_NODE and node.hasAttribute('href') and node.getAttribute('href')[0] == '#':
-		id = node.getAttribute('href')[1:]
-		if id in id_pages:
-			if id_pages[id] != page: # only do non-local links
-				node.setAttribute('href', '%s.html#%s' % (id_pages[id], id))
-                else:
-			print "warning: can't find target for #%s" % id
-        for n in node.childNodes:
-		fix_refs(page, n)
+    for e in node.findall('.//a[@href]'):
+        if e.get('href')[0] == '#':
+            id = e.get('href')[1:]
+            if id in id_pages:
+                if id_pages[id] != page: # only do non-local links
+                    e.set('href', '%s#%s' % (get_page_filename(id_pages[id]), id))
+            else:
+                if id not in missing_warnings:
+                    print "warning: can't find target for #%s" % id
+                    missing_warnings.append(id)
 
 pages = [] # for saving all the output, so fix_refs can be called in a second pass
 
+# Iterator over the full spec's body contents
+child_iter = original_body.iterchildren()
 
 # Contents/intro page:
 
-page = doc.cloneNode(True)
-page_body = page.getElementsByTagName('body')[0]
+page = deepcopy(doc)
+page_body = page.find('body')
 
-# Keep moving stuff from the front of the source document into this
+# Keep copying stuff from the front of the source document into this
 # page, until we find the first heading that isn't class="no-toc"
-while not (original_body.firstChild.nodeName == 'h2'
-           and 'no-toc' not in original_body.firstChild.getAttribute('class').split(' ')):
-	extract_ids('index', original_body.firstChild)
-	page_body.appendChild(original_body.firstChild)
-pages.append( ('index', page, 'Front cover') )
+for e in child_iter:
+    if e.getnext().tag == 'h2' and 'no-toc' not in (e.getnext().get('class') or '').split(' '):
+        break
+    page_body.append(e)
 
+pages.append( ('index', page, 'Front cover') )
 
 # Section/subsection pages:
 
 def getNodeText(node):
-	if node.nodeType == node.TEXT_NODE:
-		return node.nodeValue
-	return ''.join(getNodeText(n) for n in node.childNodes)
+    return re.sub('\s+', ' ', etree.tostring(node, method='text').strip())
 
-split_exceptions = ['video', 'the-canvas', 'the-command', 'tokenisation', 'tree-construction']
+for heading in child_iter:
+    # Handle the heading for this section
+    title = getNodeText(heading)
+    name = heading.get('id')
+    if name == 'index': name = 'section-index'
+    print '  %s' % name
 
-while original_body.firstChild:
-	# Handle the heading for this section
-	heading = original_body.firstChild
-	assert(heading.nodeName[0] == 'h') # guaranteed by the other loops
-	title = getNodeText(heading)
-	name = 'section-%s' % heading.getAttribute('id')
-	print name
+    page = deepcopy(doc)
+    page_body = page.find('body')
 
-	page = doc.cloneNode(True)
-	page_body = page.getElementsByTagName('body')[0]
+    # Add the header
+    page_body.append(deepcopy(short_header))
 
-	# Add the header
-	page_body.appendChild(short_head.cloneNode(True))
+    # Add the page heading
+    page_body.append(deepcopy(heading))
+    extract_ids(name, heading)
 
-	# Add the page heading
-	page_body.appendChild(heading)
-	extract_ids(name, heading)
+    # Keep copying stuff from the source, until we reach the end of the
+    # document or find a header to split on
+    e = heading
+    while e.getnext() is not None and not (
+            e.getnext().tag == 'h2' or e.getnext().get('id') in split_exceptions
+        ):
+        e = child_iter.next()
+        extract_ids(name, e)
+        page_body.append(deepcopy(e))
 
-	# Keep moving stuff from the source, until we reach the end of the
-	# document or find a header to split on
-	while original_body.firstChild and not (
-			original_body.firstChild.nodeType == doc.ELEMENT_NODE and (
-				original_body.firstChild.nodeName == 'h2' or
-				original_body.firstChild.nodeName == 'h3' or
-				original_body.firstChild.getAttribute('id') in split_exceptions
-			)):
-		extract_ids(name, original_body.firstChild)
-		page_body.appendChild(original_body.firstChild)
-
-	pages.append( (name, page, title) )
+    pages.append( (name, page, title) )
 
 # Fix the links, and add some navigation:
 
 for i in range(len(pages)):
-	name, doc, title = pages[i]
+    name, doc, title = pages[i]
 
-	fix_refs(name, doc)
+    fix_refs(name, doc)
 
-	if name == 'index': continue # don't add nav links to the TOC page
+    if name == 'index': continue # don't add nav links to the TOC page
 
-	head = doc.getElementsByTagName('head')[0]
+    head = doc.find('head')
 
-	nav = page.createElement('nav')
-	nav.setAttribute('id', 'nav-bar')
+    nav = etree.Element('nav')
+    nav.text = '\n   '
+    nav.tail = '\n\n  '
 
-	if i != 0:
-		href = '%s.html#nav-bar' % pages[i-1][0]
-		title = pages[i-1][2]
-		a = page.createElement('a')
-		a.setAttribute('href', href)
-		a.appendChild(page.createTextNode('< %s' % title))
-		nav.appendChild(a)
-		nav.appendChild(page.createTextNode(u' \u2013 '))
-		link = page.createElement('link')
-		link.setAttribute('href', href)
-		link.setAttribute('title', title)
-		link.setAttribute('rel', 'prev')
-		head.appendChild(link)
+    if i > 1:
+        href = get_page_filename(pages[i-1][0])
+        title = pages[i-1][2]
+        a = etree.XML(u'<a href="%s">\u2190 %s</a>' % (href, title))
+        a.tail = u' \u2013\n   '
+        nav.append(a)
+        link = etree.XML('<link href="%s" title="%s" rel="prev"/>' % (href, title))
+        link.tail = '\n  '
+        head.append(link)
 
-	a = page.createElement('a')
-	a.setAttribute('href', 'index.html#contents')
-	a.appendChild(page.createTextNode('Table of contents'))
-	nav.appendChild(a)
-	link = page.createElement('link')
-	link.setAttribute('href', 'index.html#contents')
-	link.setAttribute('title', 'Table of contents')
-	link.setAttribute('rel', 'index')
-	head.appendChild(link)
+    a = etree.XML('<a href="index.html#contents">Table of contents</a>')
+    a.tail = '\n  '
+    nav.append(a)
+    link = etree.XML('<link href="index.html#contents" title="Table of contents" rel="index"/>')
+    link.tail = '\n  '
+    head.append(link)
 
-	if i != len(pages)-1:
-		href = '%s.html#nav-bar' % pages[i+1][0]
-		title = pages[i+1][2]
-		a = page.createElement('a')
-		a.setAttribute('href', href)
-		a.appendChild(page.createTextNode('%s >' % title))
-		nav.appendChild(page.createTextNode(u' \u2013 '))
-		nav.appendChild(a)
-		link = page.createElement('link')
-		link.setAttribute('href', href)
-		link.setAttribute('title', title)
-		link.setAttribute('rel', 'next')
-		head.appendChild(link)
+    if i != len(pages)-1:
+        href = get_page_filename(pages[i+1][0])
+        title = pages[i+1][2]
+        a = etree.XML(u'<a href="%s">%s \u2192</a>' % (href, title))
+        a.tail = '\n  '
+        nav.append(a)
+        a.getprevious().tail = u' \u2013\n   '
+        link = etree.XML('<link href="%s" title="%s" rel="next"/>' % (href, title))
+        link.tail = '\n  '
+        head.append(link)
 
-	body = doc.getElementsByTagName('body')[0]
-	body.insertBefore(nav, body.childNodes[1]) # after the header
+    doc.find('body').insert(1, nav) # after the header
 
-
-def html5Serializer(element):
-	element.normalize()
-	rv = []
-	specialtext = ['style', 'script', 'xmp', 'iframe', 'noembed', 'noframes', 'noscript']
-	empty = ['area', 'base', 'basefont', 'bgsound', 'br', 'col', 'embed', 'frame',
-			 'hr', 'img', 'input', 'link', 'meta', 'param', 'spacer', 'wbr']
-
-	def escapeHTML(str):
-		return str.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
-
-	def serializeElement(element):
-		if element.nodeType == element.DOCUMENT_TYPE_NODE:
-			rv.append("<!DOCTYPE %s>" % element.name)
-		elif element.nodeType == element.DOCUMENT_NODE:
-			for child in element.childNodes:
-				serializeElement(child)
-		elif element.nodeType == element.COMMENT_NODE:
-			rv.append("<!--%s-->" % element.nodeValue)
-		elif element.nodeType == element.TEXT_NODE:
-			unescaped = False
-			n = element.parentNode
-			while n is not None:
-				if n.nodeName in specialtext:
-					unescaped = True
-					break
-				n = n.parentNode
-			if unescaped:
-				rv.append(element.nodeValue)
-			else:
-				rv.append(escapeHTML(element.nodeValue))
-		else:
-			rv.append("<%s" % element.nodeName)
-			if element.hasAttributes():
-				for name, value in element.attributes.items():
-					rv.append(' %s="%s"' % (name, escapeHTML(value)))
-			rv.append(">")
-			if element.nodeName not in empty:
-				for child in element.childNodes:
-					serializeElement(child)
-				rv.append("</%s>" % element.nodeName)
-	serializeElement(element)
-	return '<!DOCTYPE HTML>\n' + ''.join(rv)
-
-print "Outputting...";
+print "Outputting..."
 
 # Output all the pages
 for name, doc, title in pages:
-	open('%s/%s.html' % (sys.argv[2], name), 'w').write(html5Serializer(doc).encode('utf-8'))
+    f = open('%s/%s' % (sys.argv[2], get_page_filename(name)), 'w')
+    f.write('<!DOCTYPE HTML>\n')
+    tokens = html5lib.treewalkers.getTreeWalker('lxml')(doc)
+    serializer = html5lib.serializer.HTMLSerializer(quote_attr_values=True, inject_meta_charset=False)
+    for text in serializer.serialize(tokens, encoding='us-ascii'):
+        f.write(text)
 
-print "Done.";
+# Generate the script to fix broken links
+f = open('%s/fragment-links.js' % (sys.argv[2]), 'w')
+f.write('var fragment_links = { ' + ','.join("'%s':'%s'" % (k,v) for (k,v) in id_pages.items()) + ' };\n')
+f.write("""
+var fragid = window.location.hash.substr(1);
+var page = fragment_links[fragid];
+if (page) {
+    window.location = page+'.html#'+fragid;
+}
+""")
+
+print "Done."
