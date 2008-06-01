@@ -14,9 +14,31 @@ from copy import deepcopy
 
 print "HTML5 Spec Splitter"
 
-if len(sys.argv) != 3:
-    print 'Run like "python spec-splitter.py index multipage", where the directory "multipage" exists'
+absolute_uris = False
+w3c = False
+file_args = []
+
+for arg in sys.argv[1:]:
+    if arg == '--absolute':
+        absolute_uris = True
+    elif arg == '--w3c':
+        w3c = True
+    else:
+        file_args.append(arg)
+
+if len(file_args) != 2:
+    print 'Run like "python [options] spec-splitter.py index multipage"'
+    print '(The directory "multipage" must already exist)'
+    print
+    print 'Options:'
+    print '  --absolute  convert relative URIs to absolute (e.g. for images)'
+    print '  --w3c       use W3C variant instead of WHATWG'
     sys.exit()
+
+if w3c:
+    index_page = 'Overview'
+else:
+    index_page = 'index'
 
 # The document is split on all <h2> elements, plus the following specific elements
 # (which were chosen to split any pages that were larger than about 100-200KB, and
@@ -32,12 +54,12 @@ print "Parsing..."
 
 # Parse document
 parser = html5lib.html5parser.HTMLParser(tree = html5lib.treebuilders.getTreeBuilder('lxml'))
-doc = parser.parse(open(sys.argv[1]), encoding='utf-8')
+doc = parser.parse(open(file_args[0]), encoding='utf-8')
 
 print "Splitting..."
 
 # Absolutise some references, so the spec can be hosted elsewhere
-if False:
+if absolute_uris:
     for a in ('href', 'src'):
         for t in ('link', 'script', 'img'):
             for e in doc.findall('//%s[@%s]' % (t, a)):
@@ -51,8 +73,8 @@ original_body = doc.find('body')
 
 # Create an empty body, for the page content to be added into later
 default_body = etree.Element('body')
-default_body.set('class', original_body.get('class'))
-default_body.set('onload', 'fixBrokenLink(); %s' % original_body.get('onload'))
+if original_body.get('class'): default_body.set('class', original_body.get('class'))
+if original_body.get('onload'): default_body.set('onload', 'fixBrokenLink(); %s' % original_body.get('onload'))
 original_body.getparent().replace(original_body, default_body)
 
 # Extract the header, so we can reuse it in every page
@@ -63,10 +85,11 @@ short_header = deepcopy(header)
 del short_header[3:]
 
 # Prepare the link-fixup script
-link_fixup_script = etree.XML('<script src="link-fixup.js"/>')
-doc.find('head')[-1].tail = '\n  '
-doc.find('head').append(link_fixup_script)
-link_fixup_script.tail = '\n  '
+if not w3c:
+    link_fixup_script = etree.XML('<script src="link-fixup.js"/>')
+    doc.find('head')[-1].tail = '\n  '
+    doc.find('head').append(link_fixup_script)
+    link_fixup_script.tail = '\n  '
 
 # Stuff for fixing up references:
 
@@ -112,7 +135,7 @@ for e in child_iter:
         break
     page_body.append(e)
 
-pages.append( ('index', page, 'Front cover') )
+pages.append( (index_page, page, 'Front cover') )
 
 # Section/subsection pages:
 
@@ -123,7 +146,7 @@ for heading in child_iter:
     # Handle the heading for this section
     title = getNodeText(heading)
     name = heading.get('id')
-    if name == 'index': name = 'section-index'
+    if name == index_page: name = 'section-%s' % name
     print '  %s' % name
 
     page = deepcopy(doc)
@@ -155,11 +178,14 @@ for i in range(len(pages)):
 
     fix_refs(name, doc)
 
-    if name == 'index': continue # don't add nav links to the TOC page
+    if name == index_page: continue # don't add nav links to the TOC page
 
     head = doc.find('head')
 
-    nav = etree.Element('nav')
+    if w3c:
+        nav = etree.Element('div') # HTML 4 compatibility
+    else:
+        nav = etree.Element('nav')
     nav.text = '\n   '
     nav.tail = '\n\n  '
 
@@ -173,10 +199,10 @@ for i in range(len(pages)):
         link.tail = '\n  '
         head.append(link)
 
-    a = etree.XML('<a href="index.html#contents">Table of contents</a>')
+    a = etree.XML('<a href="%s.html#contents">Table of contents</a>' % index_page)
     a.tail = '\n  '
     nav.append(a)
-    link = etree.XML('<link href="index.html#contents" title="Table of contents" rel="index"/>')
+    link = etree.XML('<link href="%s.html#contents" title="Table of contents" rel="index"/>' % index_page)
     link.tail = '\n  '
     head.append(link)
 
@@ -197,15 +223,18 @@ print "Outputting..."
 
 # Output all the pages
 for name, doc, title in pages:
-    f = open('%s/%s' % (sys.argv[2], get_page_filename(name)), 'w')
-    f.write('<!DOCTYPE HTML>\n')
+    f = open('%s/%s' % (file_args[1], get_page_filename(name)), 'w')
+    if w3c:
+        f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">\n')
+    else:
+        f.write('<!DOCTYPE HTML>\n')
     tokens = html5lib.treewalkers.getTreeWalker('lxml')(doc)
     serializer = html5lib.serializer.HTMLSerializer(quote_attr_values=True, inject_meta_charset=False)
     for text in serializer.serialize(tokens, encoding='us-ascii'):
         f.write(text)
 
 # Generate the script to fix broken links
-f = open('%s/fragment-links.js' % (sys.argv[2]), 'w')
+f = open('%s/fragment-links.js' % (file_args[1]), 'w')
 f.write('var fragment_links = { ' + ','.join("'%s':'%s'" % (k,v) for (k,v) in id_pages.items()) + ' };\n')
 f.write("""
 var fragid = window.location.hash.substr(1);
