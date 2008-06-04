@@ -238,6 +238,10 @@ f = open('%s/fragment-links.js' % (file_args[1]), 'w')
 f.write('var fragment_links = { ' + ','.join("'%s':'%s'" % (k,v) for (k,v) in id_pages.items()) + ' };\n')
 f.write("""
 var fragid = window.location.hash.substr(1);
+if (!fragid) { /* handle section-foo.html links from the old multipage version */
+    var m = window.location.pathname.match(/\/section-([\w\-]+)\.html/);
+    if (m) fragid = m[1];
+}
 var page = fragment_links[fragid];
 if (page) {
     window.location = page+'.html#'+fragid;
