@@ -45,7 +45,7 @@ else:
 # may need to be adjusted as the spec changes):
 split_exceptions = [
     'offline', 'history', 'structured',
-    'the-root', 'text-level', 'embedded0', 'video', 'the-canvas', 'tabular', 'interactive-elements',
+    'text-level', 'embedded0', 'video', 'the-canvas', 'tabular', 'interactive-elements',
     'parsing', 'tokenisation', 'tree-construction', 'serializing', 'named',
 ]
 
@@ -147,7 +147,7 @@ for heading in child_iter:
     title = getNodeText(heading)
     name = heading.get('id')
     if name == index_page: name = 'section-%s' % name
-    print '  %s' % name
+    print '  <%s> %s' % (heading.tag, name)
 
     page = deepcopy(doc)
     page_body = page.find('body')
