@@ -46,7 +46,7 @@ else:
 split_exceptions = [
     'offline', 'history', 'structured',
     'text-level', 'embedded0', 'video', 'the-canvas', 'tabular', 'interactive-elements',
-    'parsing', 'tokenisation', 'tree-construction', 'serializing', 'named',
+    'parsing', 'tokenization', 'tree-construction', 'serializing', 'named',
 ]
 
 
