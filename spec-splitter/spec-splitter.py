@@ -1,13 +1,4 @@
-try:
-    import psyco
-    psyco.full() # make html5lib faster
-except ImportError:
-    pass
-
 import sys
-import html5lib
-import html5lib.serializer
-import html5lib.treewalkers
 import re
 from lxml import etree # requires lxml 2.0
 from copy import deepcopy
@@ -16,6 +7,8 @@ print "HTML5 Spec Splitter"
 
 absolute_uris = False
 w3c = False
+use_html5lib_parser = False
+use_html5lib_serialiser = False
 file_args = []
 
 for arg in sys.argv[1:]:
@@ -23,6 +16,10 @@ for arg in sys.argv[1:]:
         absolute_uris = True
     elif arg == '--w3c':
         w3c = True
+    elif arg == '--html5lib-parser':
+        use_html5lib_parser = True
+    elif arg == '--html5lib-serialiser':
+        use_html5lib_serialiser = True
     else:
         file_args.append(arg)
 
@@ -31,9 +28,16 @@ if len(file_args) != 2:
     print '(The directory "multipage" must already exist)'
     print
     print 'Options:'
-    print '  --absolute  convert relative URIs to absolute (e.g. for images)'
-    print '  --w3c       use W3C variant instead of WHATWG'
+    print '  --absolute ............. convert relative URLs to absolute (e.g. for images)'
+    print '  --w3c .................. use W3C variant instead of WHATWG'
+    print '  --html5lib-parser ...... use html5lib parser instead of lxml'
+    print '  --html5lib-serialiser .. use html5lib serialiser instead of lxml'
     sys.exit()
+
+if use_html5lib_parser or use_html5lib_serialiser:
+    import html5lib
+    import html5lib.serializer
+    import html5lib.treewalkers
 
 if w3c:
     index_page = 'Overview'
@@ -44,17 +48,21 @@ else:
 # (which were chosen to split any pages that were larger than about 100-200KB, and
 # may need to be adjusted as the spec changes):
 split_exceptions = [
-    'offline', 'history', 'structured',
-    'text-level', 'embedded0', 'video', 'the-canvas', 'tabular', 'interactive-elements',
-    'parsing', 'tokenization', 'tree-construction', 'serializing', 'named',
+    'text-level-semantics', 'embedded-content-0', 'video', 'the-canvas-element', 'tabular-data', 'forms', 'interactive-elements',
+    'offline', 'history', 'structured-client-side-storage',
+    'parsing', 'tokenization', 'tree-construction', 'serializing-html-fragments', 'named-character-references',
 ]
 
 
 print "Parsing..."
 
 # Parse document
-parser = html5lib.html5parser.HTMLParser(tree = html5lib.treebuilders.getTreeBuilder('lxml'))
-doc = parser.parse(open(file_args[0]), encoding='utf-8')
+if use_html5lib_parser:
+    parser = html5lib.html5parser.HTMLParser(tree = html5lib.treebuilders.getTreeBuilder('lxml'))
+    doc = parser.parse(open(file_args[0]), encoding='utf-8')
+else:
+    parser = etree.HTMLParser(encoding='utf-8', recover=False)
+    doc = etree.parse(open(file_args[0]), parser)
 
 print "Splitting..."
 
@@ -105,7 +113,7 @@ def extract_ids(page, node):
         id_pages[e.get('id')] = page
 
 # Updates all the href="#id" to point to page#id
-missing_warnings = []
+missing_warnings = set()
 def fix_refs(page, node):
     for e in node.findall('.//a[@href]'):
         if e.get('href')[0] == '#':
@@ -114,9 +122,11 @@ def fix_refs(page, node):
                 if id_pages[id] != page: # only do non-local links
                     e.set('href', '%s#%s' % (get_page_filename(id_pages[id]), id))
             else:
-                if id not in missing_warnings:
-                    print "warning: can't find target for #%s" % id
-                    missing_warnings.append(id)
+                missing_warnings.add(id)
+
+def report_broken_refs():
+    for id in sorted(missing_warnings):
+        print "warning: can't find target for #%s" % id
 
 pages = [] # for saving all the output, so fix_refs can be called in a second pass
 
@@ -219,6 +229,8 @@ for i in range(len(pages)):
 
     doc.find('body').insert(1, nav) # after the header
 
+report_broken_refs()
+
 print "Outputting..."
 
 # Output all the pages
@@ -228,10 +240,13 @@ for name, doc, title in pages:
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">\n')
     else:
         f.write('<!DOCTYPE HTML>\n')
-    tokens = html5lib.treewalkers.getTreeWalker('lxml')(doc)
-    serializer = html5lib.serializer.HTMLSerializer(quote_attr_values=True, inject_meta_charset=False)
-    for text in serializer.serialize(tokens, encoding='us-ascii'):
-        f.write(text)
+    if use_html5lib_serialiser:
+        tokens = html5lib.treewalkers.getTreeWalker('lxml')(doc)
+        serializer = html5lib.serializer.HTMLSerializer(quote_attr_values=True, inject_meta_charset=False)
+        for text in serializer.serialize(tokens, encoding='us-ascii'):
+            f.write(text)
+    else:
+        f.write(etree.tostring(doc, pretty_print=False, method="html"))
 
 # Generate the script to fix broken links
 f = open('%s/fragment-links.js' % (file_args[1]), 'w')
