@@ -250,7 +250,7 @@ for name, doc, title in pages:
 
 # Generate the script to fix broken links
 f = open('%s/fragment-links.js' % (file_args[1]), 'w')
-f.write('var fragment_links = { ' + ','.join("'%s':'%s'" % (k,v) for (k,v) in id_pages.items()) + ' };\n')
+f.write('var fragment_links = { ' + ','.join("'%s':'%s'" % (k.replace("\\", "\\\\").replace("'", "\\'"), v) for (k,v) in id_pages.items()) + ' };\n')
 f.write("""
 var fragid = window.location.hash.substr(1);
 if (!fragid) { /* handle section-foo.html links from the old multipage version, and broken foo.html from the new version */
