@@ -157,10 +157,12 @@ for heading in child_iter:
     title = getNodeText(heading)
     name = heading.get('id')
     if name == index_page: name = 'section-%s' % name
-    print '  <%s> %s' % (heading.tag, name)
+    print '  <%s> %s - %s' % (heading.tag, name, title)
 
     page = deepcopy(doc)
     page_body = page.find('body')
+
+    page.find('//title').text = title + u' \u2014 HTML 5'
 
     # Add the header
     page_body.append(deepcopy(short_header))
@@ -250,7 +252,8 @@ for name, doc, title in pages:
 
 # Generate the script to fix broken links
 f = open('%s/fragment-links.js' % (file_args[1]), 'w')
-f.write('var fragment_links = { ' + ','.join("'%s':'%s'" % (k.replace("\\", "\\\\").replace("'", "\\'"), v) for (k,v) in id_pages.items()) + ' };\n')
+links = ','.join("'%s':'%s'" % (k.replace("\\", "\\\\").replace("'", "\\'"), v) for (k,v) in id_pages.items())
+f.write('var fragment_links = { ' + re.sub(r"([^\x20-\x7f])", lambda m: "\\u%04x" % ord(m.group(1)), links) + ' };\n')
 f.write("""
 var fragid = window.location.hash.substr(1);
 if (!fragid) { /* handle section-foo.html links from the old multipage version, and broken foo.html from the new version */
