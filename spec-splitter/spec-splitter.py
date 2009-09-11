@@ -48,9 +48,19 @@ else:
 # (which were chosen to split any pages that were larger than about 100-200KB, and
 # may need to be adjusted as the spec changes):
 split_exceptions = [
-    'text-level-semantics', 'embedded-content-0', 'video', 'the-canvas-element', 'tabular-data', 'forms', 'interactive-elements',
-    'offline', 'history', 'structured-client-side-storage',
-    'parsing', 'tokenization', 'tree-construction', 'serializing-html-fragments', 'named-character-references',
+    'common-microsyntaxes', 'urls', # <-- infrastructure
+    'elements', 'content-models', 'apis-in-html-documents', # <-- dom
+
+    'scripting-1', 'sections', 'grouping-content', 'text-level-semantics', 'edits',
+    'embedded-content-1', 'the-iframe-element', 'video', 'media-elements', 'the-canvas-element', 'the-map-element', 'tabular-data',
+    'forms', 'the-input-element', 'states-of-the-type-attribute', 'number-state', 'common-input-element-attributes', 'the-button-element', 'association-of-controls-and-forms',
+    'interactive-elements', 'commands', # <-- semantics
+
+    'predefined-vocabularies-0', 'converting-html-to-other-formats', # <-- microdata
+    'origin-0', 'timers', 'offline', 'history', 'links', # <-- browsers
+    'dnd', # <-- editing
+
+    'parsing', 'tokenization', 'tree-construction', 'the-end', 'named-character-references', # <-- syntax
 ]
 
 
@@ -149,20 +159,34 @@ pages.append( (index_page, page, 'Front cover') )
 
 # Section/subsection pages:
 
-def getNodeText(node):
-    return re.sub('\s+', ' ', etree.tostring(node, method='text').strip())
+def should_split(e):
+    if e.tag == 'h2': return True
+    if e.get('id') in split_exceptions: return True
+    if e.tag == 'div' and e.get('class') == 'impl':
+        c = e.getchildren()
+        if len(c):
+            if c[0].tag == 'h2': return True
+            if c[0].get('id') in split_exceptions: return True
+    return False
+
+def get_heading_text_and_id(e):
+    if e.tag == 'div' and e.get('class') == 'impl':
+        node = e.getchildren()[0]
+    else:
+        node = e
+    title = re.sub('\s+', ' ', etree.tostring(node, method='text').strip())
+    return title, node.get('id')
 
 for heading in child_iter:
     # Handle the heading for this section
-    title = getNodeText(heading)
-    name = heading.get('id')
+    title, name = get_heading_text_and_id(heading)
     if name == index_page: name = 'section-%s' % name
     print '  <%s> %s - %s' % (heading.tag, name, title)
 
     page = deepcopy(doc)
     page_body = page.find('body')
 
-    page.find('//title').text = title + u' \u2014 HTML 5'
+    page.find('//title').text = title + u' \u2014 HTML5'
 
     # Add the header
     page_body.append(deepcopy(short_header))
@@ -174,9 +198,7 @@ for heading in child_iter:
     # Keep copying stuff from the source, until we reach the end of the
     # document or find a header to split on
     e = heading
-    while e.getnext() is not None and not (
-            e.getnext().tag == 'h2' or e.getnext().get('id') in split_exceptions
-        ):
+    while e.getnext() is not None and not should_split(e.getnext()):
         e = child_iter.next()
         extract_ids(name, e)
         page_body.append(deepcopy(e))
@@ -241,7 +263,7 @@ for name, doc, title in pages:
     if w3c:
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">\n')
     else:
-        f.write('<!DOCTYPE HTML>\n')
+        f.write('<!DOCTYPE html>\n')
     if use_html5lib_serialiser:
         tokens = html5lib.treewalkers.getTreeWalker('lxml')(doc)
         serializer = html5lib.serializer.HTMLSerializer(quote_attr_values=True, inject_meta_charset=False)
