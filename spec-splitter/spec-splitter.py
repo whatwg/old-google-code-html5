@@ -102,6 +102,18 @@ header = original_body.find('.//div[@class="head"]')
 short_header = deepcopy(header)
 del short_header[3:]
 
+# Extract the items in the TOC (remembering their nesting depth)
+def extract_toc_items(items, ol, depth):
+    for li in ol.iterchildren():
+        for c in li.iterchildren():
+            if c.tag == 'a':
+                assert c.get('href')[0] == '#'
+                items.append( (depth, c.get('href')[1:], c) )
+            elif c.tag == 'ol':
+                extract_toc_items(items, c, depth+1)
+toc_items = []
+extract_toc_items(toc_items, original_body.find('.//ol[@class="toc"]'), 0)
+
 # Prepare the link-fixup script
 if not w3c:
     link_fixup_script = etree.XML('<script src="link-fixup.js"/>')
@@ -143,9 +155,16 @@ pages = [] # for saving all the output, so fix_refs can be called in a second pa
 # Iterator over the full spec's body contents
 child_iter = original_body.iterchildren()
 
+def add_class(e, cls):
+    if e.get('class'):
+        e.set('class', e.get('class') + ' ' + cls)
+    else:
+        e.set('class', cls)
+
 # Contents/intro page:
 
 page = deepcopy(doc)
+add_class(page.getroot(), 'split index')
 page_body = page.find('body')
 
 # Keep copying stuff from the front of the source document into this
@@ -184,6 +203,7 @@ for heading in child_iter:
     print '  <%s> %s - %s' % (heading.tag, name, title)
 
     page = deepcopy(doc)
+    add_class(page.getroot(), 'split chapter')
     page_body = page.find('body')
 
     page.find('//title').text = title + u' \u2014 HTML5'
@@ -250,6 +270,36 @@ for i in range(len(pages)):
         link = etree.XML('<link href="%s" title="%s" rel="next"/>' % (href, title))
         link.tail = '\n  '
         head.append(link)
+
+    # Add a subset of the TOC to each page:
+
+    # Find the items that are on this page
+    new_toc_items = [ (d, id, e) for (d, id, e) in toc_items if id_pages[id] == name ]
+    if len(new_toc_items) > 1: # don't bother if there's only one item, since it looks silly
+        # Construct the new toc <ol>
+        new_toc = etree.XML(u'<ol class="toc"/>')
+        cur_ol = new_toc
+        cur_li = None
+        cur_depth = 0
+        # Add each item, reconstructing the nested <ol>s and <li>s to preserve
+        # the nesting depth of each item
+        for (d, id, e) in new_toc_items:
+            while d > cur_depth:
+                if cur_li is None:
+                    cur_li = etree.XML(u'<li/>')
+                    cur_ol.append(cur_li)
+                cur_ol = etree.XML('<ol/>')
+                cur_li.append(cur_ol)
+                cur_li = None
+                cur_depth += 1
+            while d < cur_depth:
+                cur_li = cur_ol.getparent()
+                cur_ol = cur_li.getparent()
+                cur_depth -= 1
+            cur_li = etree.XML(u'<li/>')
+            cur_li.append(deepcopy(e))
+            cur_ol.append(cur_li)
+        nav.append(new_toc)
 
     doc.find('body').insert(1, nav) # after the header
 
