@@ -52,7 +52,7 @@ split_exceptions = [
     'elements', 'content-models', 'apis-in-html-documents', # <-- dom
 
     'scripting-1', 'sections', 'grouping-content', 'text-level-semantics', 'edits',
-    'embedded-content-1', 'the-iframe-element', 'video', 'media-elements', 'the-canvas-element', 'the-map-element', 'tabular-data',
+    'embedded-content-1', 'the-iframe-element', 'video', 'the-canvas-element', 'the-map-element', 'tabular-data',
     'forms', 'the-input-element', 'states-of-the-type-attribute', 'number-state', 'common-input-element-attributes', 'the-button-element', 'association-of-controls-and-forms',
     'interactive-elements', 'commands', # <-- semantics
 
@@ -71,7 +71,7 @@ if use_html5lib_parser:
     parser = html5lib.html5parser.HTMLParser(tree = html5lib.treebuilders.getTreeBuilder('lxml'))
     doc = parser.parse(open(file_args[0]), encoding='utf-8')
 else:
-    parser = etree.HTMLParser(encoding='utf-8', recover=False)
+    parser = etree.HTMLParser(encoding='utf-8')
     doc = etree.parse(open(file_args[0]), parser)
 
 print "Splitting..."
@@ -96,11 +96,11 @@ if original_body.get('onload'): default_body.set('onload', 'fixBrokenLink(); %s'
 original_body.getparent().replace(original_body, default_body)
 
 # Extract the header, so we can reuse it in every page
-header = original_body.find('.//div[@class="head"]')
+header = original_body.find('.//*[@class="head"]')
 
 # Make a stripped-down version of it
 short_header = deepcopy(header)
-del short_header[3:]
+del short_header[2:]
 
 # Extract the items in the TOC (remembering their nesting depth)
 def extract_toc_items(items, ol, depth):
