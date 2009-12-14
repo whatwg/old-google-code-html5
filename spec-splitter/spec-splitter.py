@@ -76,6 +76,8 @@ else:
 
 print "Splitting..."
 
+doctitle = doc.find('.//title').text
+
 # Absolutise some references, so the spec can be hosted elsewhere
 if absolute_uris:
     for a in ('href', 'src'):
@@ -206,7 +208,7 @@ for heading in child_iter:
     add_class(page.getroot(), 'split chapter')
     page_body = page.find('body')
 
-    page.find('//title').text = title + u' \u2014 HTML5'
+    page.find('//title').text = title + u' \u2014 ' + doctitle
 
     # Add the header
     page_body.append(deepcopy(short_header))
