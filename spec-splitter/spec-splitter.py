@@ -320,7 +320,8 @@ for name, doc, title in pages:
         tokens = html5lib.treewalkers.getTreeWalker('lxml')(doc)
         serializer = html5lib.serializer.HTMLSerializer(quote_attr_values=True, inject_meta_charset=False)
         for text in serializer.serialize(tokens, encoding='us-ascii'):
-            f.write(text)
+            if text != '<!DOCTYPE html>': # some versions of lxml emit this; get rid of it if so
+                f.write(text)
     else:
         f.write(etree.tostring(doc, pretty_print=False, method="html"))
 
