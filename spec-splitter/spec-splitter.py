@@ -52,7 +52,7 @@ split_exceptions = [
     'elements', 'content-models', 'apis-in-html-documents', # <-- dom
 
     'scripting-1', 'sections', 'grouping-content', 'text-level-semantics', 'edits',
-    'embedded-content-1', 'the-iframe-element', 'video', 'the-canvas-element', 'the-map-element', 'tabular-data',
+    'embedded-content-1', 'the-iframe-element', 'the-video-element', 'the-canvas-element', 'the-map-element', 'tabular-data',
     'forms', 'the-input-element', 'states-of-the-type-attribute', 'number-state', 'common-input-element-attributes', 'the-button-element', 'association-of-controls-and-forms',
     'interactive-elements', 'commands', # <-- semantics
 
