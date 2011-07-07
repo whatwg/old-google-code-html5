@@ -183,7 +183,7 @@ pages.append( (index_page, page, 'Front cover') )
 def should_split(e):
     if e.tag == 'h2': return True
     if e.get('id') in split_exceptions: return True
-    if e.tag == 'div' and e.get('class') == 'impl':
+    if e.tag == 'div':
         c = e.getchildren()
         if len(c):
             if c[0].tag == 'h2': return True
@@ -191,7 +191,7 @@ def should_split(e):
     return False
 
 def get_heading_text_and_id(e):
-    if e.tag == 'div' and e.get('class') == 'impl':
+    if e.tag == 'div':
         node = e.getchildren()[0]
     else:
         node = e
