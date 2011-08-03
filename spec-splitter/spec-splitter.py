@@ -327,7 +327,7 @@ for name, doc, title in pages:
 
 # Generate the script to fix broken links
 f = open('%s/fragment-links.js' % (file_args[1]), 'w')
-links = ','.join("'%s':'%s'" % (k.replace("\\", "\\\\").replace("'", "\\'"), v) for (k,v) in id_pages.items())
+links = ','.join('"%s":"%s"' % (k.replace("\\", "\\\\").replace('"', '\\"'), v) for (k,v) in id_pages.items())
 f.write('var fragment_links = { ' + re.sub(r"([^\x20-\x7f])", lambda m: "\\u%04x" % ord(m.group(1)), links) + ' };\n')
 f.write("""
 var fragid = window.location.hash.substr(1);
