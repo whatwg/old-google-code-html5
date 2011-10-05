@@ -42,14 +42,13 @@ index_page = 'index'
 # may need to be adjusted as the spec changes):
 split_exceptions = [
     'common-microsyntaxes', 'urls', 'fetching-resources', 'common-dom-interfaces', 'namespaces', # <-- infrastructure
-    'elements', 'content-models', 'apis-in-html-documents', # <-- dom
+    'elements', 'content-models', # <-- dom
 
     'scripting-1', 'sections', 'grouping-content', 'text-level-semantics', 'edits',
     'embedded-content-1', 'the-iframe-element', 'the-video-element', 'the-canvas-element', 'the-map-element', 'tabular-data',
     'forms', 'the-input-element', 'states-of-the-type-attribute', 'number-state', 'common-input-element-attributes', 'the-button-element', 'association-of-controls-and-forms',
     'interactive-elements', 'commands', # <-- semantics
 
-    'predefined-vocabularies-0', 'converting-html-to-other-formats', # <-- microdata
     'origin-0', 'timers', 'offline', 'history', 'links', # <-- browsers
     'dnd', # <-- editing
 
