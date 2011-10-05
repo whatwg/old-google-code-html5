@@ -42,7 +42,7 @@ index_page = 'index'
 # may need to be adjusted as the spec changes):
 split_exceptions = [
     'common-microsyntaxes', 'urls', 'fetching-resources', 'common-dom-interfaces', 'namespaces', # <-- infrastructure
-    'elements', 'content-models', # <-- dom
+    'elements', # <-- dom
 
     'scripting-1', 'sections', 'grouping-content', 'text-level-semantics', 'edits',
     'embedded-content-1', 'the-iframe-element', 'the-video-element', 'the-canvas-element', 'the-map-element', 'tabular-data',
