@@ -172,19 +172,25 @@ pages.append( (index_page, page, 'Front cover') )
 
 # Section/subsection pages:
 
+def first_elm(e):
+    for c in e.iterchildren(tag=etree.Element):
+        return c
+    return None
+
 def should_split(e):
     if e.tag == 'h2': return True
     if e.get('id') in split_exceptions: return True
+    # handle wrapping <div>
     if e.tag == 'div':
-        c = e.getchildren()
-        if len(c):
-            if c[0].tag == 'h2': return True
-            if c[0].get('id') in split_exceptions: return True
+        c = first_elm(e)
+        if c:
+            if c.tag == 'h2': return True
+            if c.get('id') in split_exceptions: return True
     return False
 
 def get_heading_text_and_id(e):
     if e.tag == 'div':
-        node = e.getchildren()[0]
+        node = first_elm(e)
     else:
         node = e
     title = re.sub('\s+', ' ', etree.tostring(node, method='text').strip())
