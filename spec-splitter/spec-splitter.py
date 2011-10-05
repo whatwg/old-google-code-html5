@@ -6,7 +6,6 @@ from copy import deepcopy
 print "HTML5 Spec Splitter"
 
 absolute_uris = False
-w3c = False
 use_html5lib_parser = False
 use_html5lib_serialiser = False
 file_args = []
@@ -14,8 +13,6 @@ file_args = []
 for arg in sys.argv[1:]:
     if arg == '--absolute':
         absolute_uris = True
-    elif arg == '--w3c':
-        w3c = True
     elif arg == '--html5lib-parser':
         use_html5lib_parser = True
     elif arg == '--html5lib-serialiser':
@@ -29,7 +26,6 @@ if len(file_args) != 2:
     print
     print 'Options:'
     print '  --absolute ............. convert relative URLs to absolute (e.g. for images)'
-    print '  --w3c .................. use W3C variant instead of WHATWG'
     print '  --html5lib-parser ...... use html5lib parser instead of lxml'
     print '  --html5lib-serialiser .. use html5lib serialiser instead of lxml'
     sys.exit()
@@ -39,10 +35,7 @@ if use_html5lib_parser or use_html5lib_serialiser:
     import html5lib.serializer
     import html5lib.treewalkers
 
-if w3c:
-    index_page = 'Overview'
-else:
-    index_page = 'index'
+index_page = 'index'
 
 # The document is split on all <h2> elements, plus the following specific elements
 # (which were chosen to split any pages that were larger than about 100-200KB, and
@@ -117,11 +110,10 @@ toc_items = []
 extract_toc_items(toc_items, original_body.find('.//ol[@class="toc"]'), 0)
 
 # Prepare the link-fixup script
-if not w3c:
-    link_fixup_script = etree.XML('<script src="link-fixup.js"/>')
-    doc.find('head')[-1].tail = '\n  '
-    doc.find('head').append(link_fixup_script)
-    link_fixup_script.tail = '\n  '
+link_fixup_script = etree.XML('<script src="link-fixup.js"/>')
+doc.find('head')[-1].tail = '\n  '
+doc.find('head').append(link_fixup_script)
+link_fixup_script.tail = '\n  '
 
 # Stuff for fixing up references:
 
@@ -238,10 +230,7 @@ for i in range(len(pages)):
 
     head = doc.find('head')
 
-    if w3c:
-        nav = etree.Element('div') # HTML 4 compatibility
-    else:
-        nav = etree.Element('nav')
+    nav = etree.Element('nav')
     nav.text = '\n   '
     nav.tail = '\n\n  '
 
@@ -312,16 +301,11 @@ print "Outputting..."
 # Output all the pages
 for name, doc, title in pages:
     f = open('%s/%s' % (file_args[1], get_page_filename(name)), 'w')
-    if w3c:
-        f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">\n')
-    else:
-        f.write('<!DOCTYPE html>\n')
     if use_html5lib_serialiser:
         tokens = html5lib.treewalkers.getTreeWalker('lxml')(doc)
         serializer = html5lib.serializer.HTMLSerializer(quote_attr_values=True, inject_meta_charset=False)
         for text in serializer.serialize(tokens, encoding='us-ascii'):
-            if text != '<!DOCTYPE html>': # some versions of lxml emit this; get rid of it if so
-                f.write(text)
+            f.write(text)
     else:
         f.write(etree.tostring(doc, pretty_print=False, method="html"))
 
