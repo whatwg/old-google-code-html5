@@ -41,7 +41,7 @@ index_page = 'index'
 # (which were chosen to split any pages that were larger than about 100-200KB, and
 # may need to be adjusted as the spec changes):
 split_exceptions = [
-    'common-microsyntaxes', 'urls', # <-- infrastructure
+    'common-microsyntaxes', 'urls', 'fetching-resources', 'common-dom-interfaces', 'namespaces', # <-- infrastructure
     'elements', 'content-models', 'apis-in-html-documents', # <-- dom
 
     'scripting-1', 'sections', 'grouping-content', 'text-level-semantics', 'edits',
@@ -53,6 +53,7 @@ split_exceptions = [
     'origin-0', 'timers', 'offline', 'history', 'links', # <-- browsers
     'dnd', # <-- editing
 
+    'workers', 'network', 'web-messaging', 'webstorage',
     'parsing', 'tokenization', 'tree-construction', 'the-end', 'named-character-references', # <-- syntax
 ]
 
