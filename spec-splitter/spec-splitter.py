@@ -47,7 +47,7 @@ split_exceptions = [
     'scripting-1', 'sections', 'grouping-content', 'text-level-semantics', 'edits',
     'embedded-content-1', 'the-iframe-element', 'the-video-element', 'the-canvas-element', 'the-map-element', 'tabular-data',
     'forms', 'the-input-element', 'states-of-the-type-attribute', 'number-state', 'common-input-element-attributes', 'the-button-element', 'association-of-controls-and-forms',
-    'interactive-elements', 'commands', # <-- semantics
+    'interactive-elements', 'commands', 'common-idioms', 'selectors', # <-- semantics
 
     'origin-0', 'timers', 'offline', 'history', 'links', # <-- browsers
     'dnd', # <-- editing
