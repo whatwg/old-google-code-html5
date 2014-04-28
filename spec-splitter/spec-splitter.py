@@ -91,7 +91,7 @@ if original_body.get('onload'): default_body.set('onload', 'fixBrokenLink(); %s'
 original_body.getparent().replace(original_body, default_body)
 
 # Extract the header, so we can reuse it in every page
-header = original_body.find('.//*[@class="head"]')
+header = original_body.find('.//header')
 
 # Make a stripped-down version of it
 short_header = deepcopy(header)
